@@ -19,6 +19,16 @@ Open http://localhost:5000
 committed, so `python train_model.py` is optional unless you want to retrain
 on updated data.
 
+### Optional: AI reasoning signal (Groq)
+
+A 4th detection signal — an open-weight LLM's own fraud judgment plus a
+plain-English explanation — can be enabled by setting a `GROQ_API_KEY`
+environment variable (free at https://console.groq.com/keys, no card
+required). Without it, the app works exactly as before; this is purely
+additive and fails soft (a missing key, network issue, or malformed
+response just means `llm_probability`/`llm_reasoning` come back as `null`,
+never an error). See `llm_signal.py`.
+
 ## Deploy for free
 
 ### Option A — Render.com (recommended, easiest)
@@ -108,3 +118,11 @@ not a bug. For persistent history, swap the JSON file for a hosted database
   fed into the same rule score. A posting missing all three can tip to
   Fake; a single missing signal alone can't, since plenty of legitimate
   short gig postings exist too.
+- **Optional AI reasoning signal**: `llm_signal.py` calls Groq's free API
+  (serves open-weight models — Llama 3.3 by default) as a 4th signal,
+  blended into the same probabilistic-OR combination as ML/rules/vagueness.
+  Entirely optional and fails soft — no `GROQ_API_KEY` set, or any API
+  failure, and the app behaves exactly as it did before this existed.
+  Adds real latency (~1-3s) when enabled, and depends on a third-party
+  service's uptime/rate limits, so it's an enhancement layered on top of
+  the already-measured 97%-accuracy model, not a replacement for it.

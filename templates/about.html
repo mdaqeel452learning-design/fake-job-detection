@@ -25,7 +25,8 @@
     <div class="step-row"><div class="step-num">3</div><div><p class="step-title">ML Model Prediction</p><p class="step-desc">A neural network (MLP Classifier) estimates the probability the posting is fraudulent.</p></div></div>
     <div class="step-row"><div class="step-num">4</div><div><p class="step-title">Rule-Based Check</p><p class="step-desc">Known scam phrases are weighted by severity, not treated as an automatic override.</p></div></div>
     <div class="step-row"><div class="step-num">5</div><div><p class="step-title">Vagueness Check</p><p class="step-desc">Flags postings that are short, name no company, and give no way to apply &mdash; common in thin scam listings.</p></div></div>
-    <div class="step-row"><div class="step-num">6</div><div><p class="step-title">Final Decision</p><p class="step-desc">ML and rule signals combine as a probabilistic OR &mdash; either can independently flag Fake, but one weak phrase alone can't.</p></div></div>
+    <div class="step-row"><div class="step-num">6</div><div><p class="step-title">AI Reasoning (optional)</p><p class="step-desc">An open-weight LLM (Llama 3.3 via Groq) gives its own fraud score plus a plain-English explanation, when configured.</p></div></div>
+    <div class="step-row"><div class="step-num">7</div><div><p class="step-title">Final Decision</p><p class="step-desc">All signals combine as a probabilistic OR &mdash; any one can independently flag Fake, but one weak phrase alone can't.</p></div></div>
   </div>
 
   <div class="card" style="margin-bottom:0;">
@@ -58,6 +59,7 @@
       <div class="stat-card" style="justify-content:center; text-align:center; flex-direction:column;">🔢<div style="font-size:11px; font-weight:700; margin-top:4px;">TF-IDF</div></div>
       <div class="stat-card" style="justify-content:center; text-align:center; flex-direction:column;">🧠<div style="font-size:11px; font-weight:700; margin-top:4px;">MLP</div></div>
       <div class="stat-card" style="justify-content:center; text-align:center; flex-direction:column;">🌶️<div style="font-size:11px; font-weight:700; margin-top:4px;">Flask</div></div>
+      <div class="stat-card" style="justify-content:center; text-align:center; flex-direction:column;">🦙<div style="font-size:11px; font-weight:700; margin-top:4px;">Llama 3.3</div></div>
     </div>
   </div>
   <div class="card" style="margin-bottom:0;">

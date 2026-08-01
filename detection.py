@@ -8,6 +8,8 @@ import os
 import re
 import pickle
 
+from llm_signal import get_llm_signal
+
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(_BASE_DIR, "model.pkl")
 VECTORIZER_PATH = os.path.join(_BASE_DIR, "vectorizer.pkl")
@@ -290,18 +292,25 @@ class Detector:
         raw_rule_score, matched = rule_based_check(text)
         rule_component = min(raw_rule_score / RULE_SCORE_CAP, 1.0)
 
+        llm_result = get_llm_signal(text)
+        llm_prob_fake = llm_result["fraud_probability"] if llm_result else None
+
         # Combine as a probabilistic OR, not a weighted average: either a
         # confident ML judgment OR overwhelming rule evidence (several
-        # severe scam phrases) can independently push a posting to Fake.
-        # A weighted average can't do this — with rule weight kept low
-        # enough that one generic phrase can't dominate, maxed-out rule
-        # evidence alone was structurally incapable of crossing the
-        # threshold whenever the ML model happened to disagree, even for
-        # blatant scam text with 4+ matched phrases. A single weak/generic
-        # phrase still can't decide anything on its own here, since it only
-        # produces a small rule_component (e.g. ~0.17 for one low-severity
-        # match), which needs substantial ML agreement to cross 0.5.
-        final_score = 1.0 - (1.0 - ml_prob_fake) * (1.0 - rule_component)
+        # severe scam phrases) OR a confident LLM judgment can each
+        # independently push a posting to Fake. A weighted average can't
+        # do this — with rule weight kept low enough that one generic
+        # phrase can't dominate, maxed-out rule evidence alone was
+        # structurally incapable of crossing the threshold whenever the
+        # ML model happened to disagree, even for blatant scam text with
+        # 4+ matched phrases. A single weak/generic phrase still can't
+        # decide anything on its own here, since it only produces a small
+        # rule_component (e.g. ~0.17 for one low-severity match), which
+        # needs substantial ML (or LLM) agreement to cross 0.5.
+        not_fake_prob = (1.0 - ml_prob_fake) * (1.0 - rule_component)
+        if llm_prob_fake is not None:
+            not_fake_prob *= (1.0 - llm_prob_fake)
+        final_score = 1.0 - not_fake_prob
         is_fake = final_score >= FAKE_THRESHOLD
 
         return {
@@ -311,4 +320,6 @@ class Detector:
             "ml_probability": round(ml_prob_fake * 100, 2),
             "rule_score": raw_rule_score,
             "matched_patterns": matched,
+            "llm_probability": round(llm_prob_fake * 100, 2) if llm_prob_fake is not None else None,
+            "llm_reasoning": llm_result["reasoning"] if llm_result else None,
         }

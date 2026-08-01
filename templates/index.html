@@ -28,6 +28,7 @@
       <p class="result-label" id="resultLabel"></p>
       <p class="result-desc" id="resultDesc">Enter a job description above and click Predict to see the result.</p>
       <div class="matched-tags" id="matchedTags"></div>
+      <div class="ai-reasoning" id="aiReasoning" style="display:none;"></div>
     </div>
     <div class="gauge-wrap">
       <canvas id="gaugeCanvas" width="86" height="86"></canvas>
@@ -111,6 +112,7 @@ const resultIcon = document.getElementById('resultIcon');
 const resultLabel = document.getElementById('resultLabel');
 const resultDesc = document.getElementById('resultDesc');
 const matchedTags = document.getElementById('matchedTags');
+const aiReasoning = document.getElementById('aiReasoning');
 const gaugeCanvas = document.getElementById('gaugeCanvas');
 const gaugePct = document.getElementById('gaugePct');
 const gaugeSub = document.getElementById('gaugeSub');
@@ -132,6 +134,8 @@ function resetResult() {
   resultLabel.textContent = '';
   resultDesc.textContent = 'Enter a job description above and click Predict to see the result.';
   matchedTags.innerHTML = '';
+  aiReasoning.style.display = 'none';
+  aiReasoning.innerHTML = '';
   gaugePct.textContent = '';
   gaugeSub.textContent = '';
   gaugeCanvas.getContext('2d').clearRect(0, 0, 86, 86);
@@ -168,6 +172,8 @@ predictBtn.addEventListener('click', async () => {
   resultLabel.textContent = '';
   resultDesc.textContent = 'Running the text through the model and rule checks...';
   matchedTags.innerHTML = '';
+  aiReasoning.style.display = 'none';
+  aiReasoning.innerHTML = '';
 
   const minDelay = new Promise(resolve => setTimeout(resolve, 450));
 
@@ -205,6 +211,17 @@ predictBtn.addEventListener('click', async () => {
       tag.style.animationDelay = (i * 0.05) + 's';
       matchedTags.appendChild(tag);
     });
+
+    if (data.llm_reasoning) {
+      aiReasoning.innerHTML = '';
+      const label = document.createElement('strong');
+      label.textContent = '🤖 AI reasoning: ';
+      aiReasoning.appendChild(label);
+      aiReasoning.appendChild(document.createTextNode(data.llm_reasoning));
+      aiReasoning.style.display = 'block';
+    } else {
+      aiReasoning.style.display = 'none';
+    }
 
     animateGauge(gaugeCanvas, data.fake_probability, isFake, (current) => {
       gaugePct.textContent = Math.round(current) + '%';
