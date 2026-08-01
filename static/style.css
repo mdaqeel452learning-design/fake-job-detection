@@ -1,9 +1,9 @@
 :root {
-  --bg: #0a0b14;
+  --bg: #171926;
   --text: #eeeef5;
-  --card: #131522;
-  --card2: #10111c;
-  --muted: #8b8ea3;
+  --card: #20232f;
+  --card2: #1b1e29;
+  --muted: #949ab0;
   --accent: #6d5ef8;
   --accent-dark: #5646e0;
   --accent-soft: rgba(109,94,248,0.15);
@@ -149,7 +149,7 @@ a { text-decoration: none; color: inherit; }
   justify-content: space-between;
   gap: 20px;
   padding: 14px 32px;
-  background: rgba(7,16,12,0.75);
+  background: rgba(23,25,38,0.75);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
