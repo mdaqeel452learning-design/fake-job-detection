@@ -119,20 +119,70 @@ RULE_SCORE_CAP = 6.0
 
 FAKE_THRESHOLD = 0.5
 
+_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+_URL_RE = re.compile(r"https?://|www\.", re.IGNORECASE)
+_PHONE_RE = re.compile(r"\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b")
+_APPLY_PHRASE_RE = re.compile(
+    r"\bapply\s+(at|here|online|via|through|now)\b|send\s+(your\s+)?resume|"
+    r"click\s+here|visit\s+our|application\s+form",
+    re.IGNORECASE,
+)
+_COMPANY_SUFFIX_RE = re.compile(
+    r"\b[A-Z][\w&]*(?:\s[A-Z][\w&]*){0,3}\s"
+    r"(Inc\.?|LLC|L\.L\.C\.|Corp\.?|Corporation|Company|Co\.|Ltd\.?|Group|"
+    r"Technologies|Solutions|Enterprises|Industries)\b"
+)
+_COMPANY_LABEL_RE = re.compile(r"\b(company|employer|organization)\s*:\s*\S+", re.IGNORECASE)
+VAGUE_WORD_COUNT_THRESHOLD = 60
+
+
+def vagueness_check(text: str):
+    """Detects postings that are short and give no way to verify who's
+    hiring or how to actually apply. Each flag is a weak, independent
+    nudge (same weight as a low-severity scam phrase) — never decisive
+    alone — since plenty of real short gig postings exist too."""
+    text = text or ""
+    flags = []
+    score = 0.0
+
+    word_count = len(text.split())
+    if word_count < VAGUE_WORD_COUNT_THRESHOLD:
+        score += 1.0
+        flags.append("Posting is unusually short on detail")
+
+    has_apply_method = bool(
+        _EMAIL_RE.search(text) or _URL_RE.search(text) or _PHONE_RE.search(text) or _APPLY_PHRASE_RE.search(text)
+    )
+    if not has_apply_method:
+        score += 1.0
+        flags.append("No clear way to apply (no email, link, or contact method)")
+
+    has_company_name = bool(_COMPANY_SUFFIX_RE.search(text) or _COMPANY_LABEL_RE.search(text))
+    if not has_company_name:
+        score += 1.0
+        flags.append("No identifiable company name mentioned")
+
+    return score, flags
+
 
 def rule_based_check(text: str):
     """Returns (raw_score, matched_patterns) for a piece of job text."""
-    text = (text or "").lower()
+    text_lower = (text or "").lower()
     matched = []
     score = 0.0
     for pattern in HIGH_SEVERITY_PATTERNS:
-        if pattern in text:
+        if pattern in text_lower:
             score += 2.0
             matched.append(pattern)
     for pattern in LOW_SEVERITY_PATTERNS:
-        if pattern in text:
+        if pattern in text_lower:
             score += 1.0
             matched.append(pattern)
+
+    vague_score, vague_flags = vagueness_check(text)
+    score += vague_score
+    matched.extend(vague_flags)
+
     return score, matched
 
 

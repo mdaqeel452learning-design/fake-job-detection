@@ -100,3 +100,11 @@ not a bug. For persistent history, swap the JSON file for a hosted database
   retrains even with the same code, due to normal floating-point
   non-determinism in neural network training — check `metrics.json` for
   the actual numbers behind the currently-deployed model.
+- **Vagueness signal**: some scam postings are too thin to catch by wording
+  alone — no named employer, no real way to apply, barely any detail.
+  `vagueness_check()` in `detection.py` flags three text-derivable signals
+  (unusually short, no application method found, no identifiable company
+  name found), each weighted the same as a low-severity scam phrase and
+  fed into the same rule score. A posting missing all three can tip to
+  Fake; a single missing signal alone can't, since plenty of legitimate
+  short gig postings exist too.

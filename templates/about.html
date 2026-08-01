@@ -24,7 +24,8 @@
     <div class="step-row"><div class="step-num">2</div><div><p class="step-title">Feature Extraction</p><p class="step-desc">Text is converted into numerical features using TF-IDF (unigrams + bigrams).</p></div></div>
     <div class="step-row"><div class="step-num">3</div><div><p class="step-title">ML Model Prediction</p><p class="step-desc">A neural network (MLP Classifier) estimates the probability the posting is fraudulent.</p></div></div>
     <div class="step-row"><div class="step-num">4</div><div><p class="step-title">Rule-Based Check</p><p class="step-desc">Known scam phrases are weighted by severity, not treated as an automatic override.</p></div></div>
-    <div class="step-row"><div class="step-num">5</div><div><p class="step-title">Final Decision</p><p class="step-desc">ML and rule signals combine as a probabilistic OR &mdash; either can independently flag Fake, but one weak phrase alone can't.</p></div></div>
+    <div class="step-row"><div class="step-num">5</div><div><p class="step-title">Vagueness Check</p><p class="step-desc">Flags postings that are short, name no company, and give no way to apply &mdash; common in thin scam listings.</p></div></div>
+    <div class="step-row"><div class="step-num">6</div><div><p class="step-title">Final Decision</p><p class="step-desc">ML and rule signals combine as a probabilistic OR &mdash; either can independently flag Fake, but one weak phrase alone can't.</p></div></div>
   </div>
 
   <div class="card" style="margin-bottom:0;">
