@@ -57,13 +57,17 @@ if _RAW_DATABASE_URL:
                 )
             _conn.commit()
         _db_ready = True
+        _db_error = None
     except Exception as exc:
+        _db_error = repr(exc)[:300]
         print(
             f"[storage] DATABASE_URL set but connection/init failed, "
             f"falling back to local JSON file: {exc!r}",
             file=sys.stderr,
         )
         _db_ready = False
+else:
+    _db_error = "DATABASE_URL not set"
 
 if _db_ready:
 

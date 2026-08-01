@@ -3,6 +3,7 @@ import os
 
 from flask import Flask, jsonify, render_template, request
 
+import storage
 from detection import Detector, METRICS_PATH
 from storage import append_history, clear_history, load_history, new_history_item
 
@@ -94,6 +95,16 @@ def how_it_works_page():
 @app.route("/contact")
 def contact_page():
     return render_template("contact.html")
+
+
+@app.route("/api/debug/storage")
+def debug_storage():
+    # No secrets exposed - just whether the DB connected and, if not, why.
+    return jsonify({
+        "db_ready": storage._db_ready,
+        "db_error": storage._db_error,
+        "history_count": len(load_history()),
+    })
 
 
 if __name__ == "__main__":
