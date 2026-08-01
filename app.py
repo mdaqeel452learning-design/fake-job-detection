@@ -1,14 +1,12 @@
 import json
 import os
-from datetime import datetime, timezone
 
 from flask import Flask, jsonify, render_template, request
 
 from detection import Detector, METRICS_PATH
+from storage import append_history, clear_history, load_history, new_history_item
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-HISTORY_PATH = os.path.join(_BASE_DIR, "prediction_history.json")
-MAX_HISTORY = 500
 
 app = Flask(__name__)
 detector = Detector()
@@ -20,23 +18,6 @@ def load_metrics():
             return json.load(f)
     except Exception:
         return {"accuracy": None, "precision": None, "recall": None, "f1_score": None}
-
-
-def load_history():
-    try:
-        with open(HISTORY_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data if isinstance(data, list) else []
-    except Exception:
-        return []
-
-
-def save_history(history):
-    try:
-        with open(HISTORY_PATH, "w", encoding="utf-8") as f:
-            json.dump(history[-MAX_HISTORY:], f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
 
 
 def compute_stats(history):
@@ -71,18 +52,8 @@ def api_predict():
 
     result = detector.predict(text)
 
+    append_history(new_history_item(text, result))
     history = load_history()
-    history.append(
-        {
-            "text": text,
-            "is_fake": result["is_fake"],
-            "confidence": result["confidence"],
-            "ml_probability": result["ml_probability"],
-            "matched_patterns": result["matched_patterns"],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-    )
-    save_history(history)
 
     result["stats"] = compute_stats(history)
     return jsonify(result)
@@ -95,8 +66,8 @@ def history_page():
 
 
 @app.route("/api/history/clear", methods=["POST"])
-def clear_history():
-    save_history([])
+def clear_history_route():
+    clear_history()
     return jsonify({"ok": True})
 
 
