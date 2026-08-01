@@ -66,6 +66,14 @@ def preprocess_text(text: str) -> str:
 HIGH_SEVERITY_PATTERNS = [
     "registration fee",
     "processing fee",
+    "verification fee",
+    "documentation fee",
+    "application fee",
+    "interview fee",
+    "service fee",
+    "joining fee",
+    "security fee",
+    "refundable fee",
     "pay a fee",
     "small fee",
     "security deposit",
@@ -86,6 +94,15 @@ HIGH_SEVERITY_PATTERNS = [
     "no company name",
     "pay before you start",
     "training fee",
+]
+
+# Regex versions catch the same intent (pay a fee before something happens)
+# even when the exact phrase isn't in the literal list above — e.g. "a
+# document verification fee ... must be paid before scheduling" doesn't
+# contain any of the literal phrases word-for-word, but is the same scam.
+HIGH_SEVERITY_REGEX = [
+    re.compile(r"\bfee\b[^.]{0,60}\b(before|prior to)\b", re.IGNORECASE),
+    re.compile(r"\b(pay|paid|payment)\b[^.]{0,60}\bfee\b[^.]{0,60}\b(confirm|secure|schedule|book)\b", re.IGNORECASE),
 ]
 
 # Weaker indicators: common in real postings too, so they only nudge the
@@ -165,19 +182,39 @@ def vagueness_check(text: str):
     return score, flags
 
 
+_NEGATION_CUES = ("no ", "not ", "without ", "never ", "exempt from", "free of", "does not", "won't", "will not")
+_NEGATION_WINDOW = 30
+
+
+def _is_negated(text_lower: str, match_start: int) -> bool:
+    """Checks for a negation cue right before a match, so "exempt from any
+    application fee" or "no registration fee required" don't score as scam
+    signals just because the phrase itself appears."""
+    start = max(0, match_start - _NEGATION_WINDOW)
+    context = text_lower[start:match_start]
+    return any(cue in context for cue in _NEGATION_CUES)
+
+
 def rule_based_check(text: str):
     """Returns (raw_score, matched_patterns) for a piece of job text."""
     text_lower = (text or "").lower()
     matched = []
     score = 0.0
     for pattern in HIGH_SEVERITY_PATTERNS:
-        if pattern in text_lower:
+        idx = text_lower.find(pattern)
+        if idx != -1 and not _is_negated(text_lower, idx):
             score += 2.0
             matched.append(pattern)
     for pattern in LOW_SEVERITY_PATTERNS:
-        if pattern in text_lower:
+        idx = text_lower.find(pattern)
+        if idx != -1 and not _is_negated(text_lower, idx):
             score += 1.0
             matched.append(pattern)
+    for regex in HIGH_SEVERITY_REGEX:
+        m = regex.search(text_lower)
+        if m and not _is_negated(text_lower, m.start()):
+            score += 2.0
+            matched.append(m.group(0).strip())
 
     vague_score, vague_flags = vagueness_check(text)
     score += vague_score
@@ -189,6 +226,45 @@ def rule_based_check(text: str):
 def _load_pickle(path):
     with open(path, "rb") as f:
         return pickle.load(f)
+
+
+# --- Template/duplicate-spam detection ---------------------------------
+# Separate from the fraud-scam verdict on purpose. Mass-templated postings
+# (the same boilerplate sentence submitted repeatedly with one word swapped)
+# are a real job-board abuse pattern, but they are NOT the same thing as a
+# scam designed to steal money/data — a single well-written posting can't
+# be judged "templated" in isolation, since that requires comparing it
+# against *other* submissions. Folding this into the ML training labels
+# (tried and reverted) taught the model "well-formatted job posting =
+# fraud", which wrongly flagged ordinary real postings. Comparing against
+# recent submission history avoids that: it only fires on actual repetition.
+DUPLICATE_SIMILARITY_THRESHOLD = 0.85
+DUPLICATE_MIN_MATCHES = 2
+DUPLICATE_HISTORY_WINDOW = 200
+
+
+def duplicate_signal(text: str, history_texts, vectorizer) -> dict:
+    """Compares `text` against recent prior submissions using the same
+    TF-IDF vectorizer the model uses. sklearn's TfidfVectorizer L2-normalizes
+    rows by default, so a plain dot product between two vectors already IS
+    their cosine similarity — no extra library needed."""
+    cleaned = preprocess_text(text)
+    if not cleaned.strip() or not history_texts:
+        return {"is_template_spam": False, "similar_count": 0}
+
+    recent = history_texts[-DUPLICATE_HISTORY_WINDOW:]
+    cleaned_history = [preprocess_text(t) for t in recent]
+    vectors = vectorizer.transform([cleaned] + cleaned_history)
+    target = vectors[0]
+    others = vectors[1:]
+
+    similarities = (others @ target.T).toarray().ravel()
+    similar_count = int((similarities >= DUPLICATE_SIMILARITY_THRESHOLD).sum())
+
+    return {
+        "is_template_spam": similar_count >= DUPLICATE_MIN_MATCHES,
+        "similar_count": similar_count,
+    }
 
 
 class Detector:
