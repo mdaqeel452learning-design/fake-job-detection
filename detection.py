@@ -89,8 +89,7 @@ HIGH_SEVERITY_PATTERNS = [
     "whatsapp only",
     "contact via telegram",
     "telegram only",
-    "no interview needed",
-    "no interview required",
+    "no interview",
     "no company name",
     "pay before you start",
     "training fee",
@@ -108,7 +107,7 @@ HIGH_SEVERITY_REGEX = [
 # Weaker indicators: common in real postings too, so they only nudge the
 # score rather than deciding it on their own.
 LOW_SEVERITY_PATTERNS = [
-    "no experience required",
+    "no experience",
     "no prior experience",
     "anyone can apply",
     "earn money",
@@ -128,6 +127,7 @@ LOW_SEVERITY_PATTERNS = [
     "simple data entry",
     "basic typing",
     "hours daily and earn",
+    "whatsapp",
 ]
 
 # Rule score (0..RULE_SCORE_CAP) beyond which the rule component saturates
@@ -184,13 +184,19 @@ def vagueness_check(text: str):
 
 _NEGATION_CUES = ("no ", "not ", "without ", "never ", "exempt from", "free of", "does not", "won't", "will not")
 _NEGATION_WINDOW = 30
+_SENTENCE_BOUNDARY_RE = re.compile(r"[.!?\n]")
 
 
 def _is_negated(text_lower: str, match_start: int) -> bool:
-    """Checks for a negation cue right before a match, so "exempt from any
-    application fee" or "no registration fee required" don't score as scam
-    signals just because the phrase itself appears."""
-    start = max(0, match_start - _NEGATION_WINDOW)
+    """Checks for a negation cue right before a match, in the SAME clause
+    only — so "exempt from any application fee" or "no registration fee
+    required" don't score as scam signals just because the phrase appears,
+    but an unrelated "No experience." in a prior sentence can't wrongly
+    negate a later, separate match like "immediate joining"."""
+    preceding = text_lower[:match_start]
+    boundaries = [m.end() for m in _SENTENCE_BOUNDARY_RE.finditer(preceding)]
+    clause_start = boundaries[-1] if boundaries else 0
+    start = max(clause_start, match_start - _NEGATION_WINDOW)
     context = text_lower[start:match_start]
     return any(cue in context for cue in _NEGATION_CUES)
 
