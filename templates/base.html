@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%A1%EF%B8%8F%3C/text%3E%3C/svg%3E">
 {% block head %}{% endblock %}
 </head>
 <body>
@@ -40,6 +41,23 @@
     </footer>
   </main>
 </div>
+<div class="toast-stack" id="toastStack"></div>
+<script>
+function showToast(message, type) {
+  const stack = document.getElementById('toastStack');
+  if (!stack) return;
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = message;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-6px)';
+    setTimeout(() => el.remove(), 300);
+  }, 4000);
+}
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

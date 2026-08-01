@@ -9,6 +9,7 @@
 <div class="card">
   <h3>Enter Job Description</h3>
   <textarea id="jobInput" class="job-input" placeholder="Paste the job title and description here..."></textarea>
+  <div class="word-count-hint" id="wordCountHint">0 words</div>
 
   <div class="button-row">
     <button id="predictBtn" class="btn btn-primary">🔍 Predict</button>
@@ -49,6 +50,22 @@
 
 {% block scripts %}
 <script>
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+function animateGauge(canvas, targetConfidence, isFake, onFrame) {
+  const start = performance.now();
+  const duration = 700;
+  function frame(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = easeOutCubic(t);
+    const current = targetConfidence * eased;
+    drawGauge(canvas, current, isFake);
+    if (onFrame) onFrame(current);
+    if (t < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
 function drawGauge(canvas, confidence, isFake) {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, 86, 86);
@@ -73,6 +90,20 @@ function drawGauge(canvas, confidence, isFake) {
   ctx.fillText(Math.round(confidence) + '%', 43, 43);
 }
 
+function animateCount(el, from, to, duration) {
+  if (from === to) { el.textContent = to; return; }
+  const start = performance.now();
+  function frame(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = easeOutCubic(t);
+    const value = Math.round(from + (to - from) * eased);
+    el.textContent = value;
+    if (t < 1) requestAnimationFrame(frame);
+    else el.textContent = to;
+  }
+  requestAnimationFrame(frame);
+}
+
 const jobInput = document.getElementById('jobInput');
 const predictBtn = document.getElementById('predictBtn');
 const clearBtn = document.getElementById('clearBtn');
@@ -83,8 +114,19 @@ const matchedTags = document.getElementById('matchedTags');
 const gaugeCanvas = document.getElementById('gaugeCanvas');
 const gaugePct = document.getElementById('gaugePct');
 const gaugeSub = document.getElementById('gaugeSub');
+const wordCountHint = document.getElementById('wordCountHint');
+const resultCard = resultIcon.closest('.card');
+
+function updateWordCount() {
+  const words = jobInput.value.trim().split(/\s+/).filter(Boolean).length;
+  wordCountHint.textContent = words === 1 ? '1 word' : words + ' words';
+  wordCountHint.style.color = words > 0 && words < 20 ? '#f59e0b' : '';
+}
+jobInput.addEventListener('input', updateWordCount);
+updateWordCount();
 
 function resetResult() {
+  resultCard.classList.remove('predict-loading');
   resultIcon.style.background = '#1f2937';
   resultIcon.textContent = '⏳';
   resultLabel.textContent = '';
@@ -97,30 +139,54 @@ function resetResult() {
 
 clearBtn.addEventListener('click', () => {
   jobInput.value = '';
+  updateWordCount();
   resetResult();
+  jobInput.focus();
 });
 
 predictBtn.addEventListener('click', async () => {
   const text = jobInput.value.trim();
   if (!text) {
+    resultCard.classList.remove('predict-loading');
     resultIcon.style.background = '#1f2937';
     resultIcon.textContent = '⚠️';
     resultLabel.textContent = 'Please enter job description';
     resultLabel.style.color = '#f59e0b';
     resultDesc.textContent = 'Enter a valid job description above.';
+    showToast('Paste a job description before predicting.', 'warn');
     return;
   }
 
+  const prevTotal = parseInt(document.getElementById('statTotal').textContent, 10) || 0;
+  const prevFake = parseInt(document.getElementById('statFake').textContent, 10) || 0;
+  const prevReal = parseInt(document.getElementById('statReal').textContent, 10) || 0;
+
   predictBtn.disabled = true;
-  predictBtn.textContent = 'Predicting...';
+  predictBtn.innerHTML = '<span class="spinner"></span>Analyzing...';
+  resultCard.classList.add('predict-loading');
+  resultIcon.textContent = '🔎';
+  resultLabel.textContent = '';
+  resultDesc.textContent = 'Running the text through the model and rule checks...';
+  matchedTags.innerHTML = '';
+
+  const minDelay = new Promise(resolve => setTimeout(resolve, 450));
+
   try {
-    const res = await fetch('/api/predict', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
-    });
+    const [res] = await Promise.all([
+      fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      }),
+      minDelay
+    ]);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Prediction failed');
+
+    resultCard.classList.remove('predict-loading');
+    resultCard.classList.remove('result-updated');
+    void resultCard.offsetWidth; // restart animation
+    resultCard.classList.add('result-updated');
 
     const isFake = data.is_fake;
     resultLabel.style.color = isFake ? '#ef4444' : '#10b981';
@@ -132,28 +198,34 @@ predictBtn.addEventListener('click', async () => {
       : 'This job advertisement is predicted to be REAL. This looks like a trustworthy posting.';
 
     matchedTags.innerHTML = '';
-    (data.matched_patterns || []).forEach(p => {
+    (data.matched_patterns || []).forEach((p, i) => {
       const tag = document.createElement('span');
       tag.className = 'matched-tag';
       tag.textContent = p;
+      tag.style.animationDelay = (i * 0.05) + 's';
       matchedTags.appendChild(tag);
     });
 
-    drawGauge(gaugeCanvas, data.fake_probability, isFake);
-    gaugePct.textContent = data.fake_probability + '%';
+    animateGauge(gaugeCanvas, data.fake_probability, isFake, (current) => {
+      gaugePct.textContent = Math.round(current) + '%';
+    });
     gaugeSub.textContent = isFake ? 'High Probability of Fake' : 'High Probability of Real';
     gaugeSub.style.color = isFake ? '#ef4444' : '#10b981';
 
-    document.getElementById('statTotal').textContent = data.stats.total;
-    document.getElementById('statFake').textContent = data.stats.fake;
-    document.getElementById('statReal').textContent = data.stats.real;
+    animateCount(document.getElementById('statTotal'), prevTotal, data.stats.total, 500);
+    animateCount(document.getElementById('statFake'), prevFake, data.stats.fake, 500);
+    animateCount(document.getElementById('statReal'), prevReal, data.stats.real, 500);
+
+    showToast(isFake ? 'Flagged as a likely fake posting.' : 'Looks like a legitimate posting.', isFake ? 'error' : '');
   } catch (err) {
+    resultCard.classList.remove('predict-loading');
     resultLabel.style.color = '#f59e0b';
     resultLabel.textContent = 'Error';
     resultDesc.textContent = err.message;
+    showToast('Something went wrong: ' + err.message, 'error');
   } finally {
     predictBtn.disabled = false;
-    predictBtn.textContent = '🔍 Predict';
+    predictBtn.innerHTML = '🔍 Predict';
   }
 });
 </script>

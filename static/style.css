@@ -28,6 +28,88 @@ body {
 
 a { text-decoration: none; color: inherit; }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.35); }
+  50% { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-10px) translateX(0); }
+  to { opacity: 1; transform: translateY(0) translateX(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -300px 0; }
+  100% { background-position: 300px 0; }
+}
+
+.content .card {
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.content .card:nth-of-type(1) { animation-delay: 0.02s; }
+.content .card:nth-of-type(2) { animation-delay: 0.08s; }
+.content .card:nth-of-type(3) { animation-delay: 0.14s; }
+.content .card:nth-of-type(4) { animation-delay: 0.2s; }
+.content .card:nth-of-type(5) { animation-delay: 0.26s; }
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -2px;
+  margin-right: 8px;
+}
+
+.word-count-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+  text-align: right;
+  transition: color 0.2s ease;
+}
+
+.toast-stack {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  background: #1f2937;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  max-width: 320px;
+}
+.toast.error { border-color: rgba(239,68,68,0.5); }
+.toast.warn { border-color: rgba(245,158,11,0.5); }
+
+.result-updated {
+  animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.predict-loading .result-icon-circle {
+  animation: pulseGlow 1.4s ease-in-out infinite;
+}
+
+.stat-value.stat-bump {
+  animation: fadeInUp 0.3s ease both;
+}
+
 .app-shell {
   display: flex;
   min-height: 100vh;
@@ -223,6 +305,7 @@ textarea.job-input:focus {
   font-size: 11px; padding: 4px 10px; border-radius: 999px;
   background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3);
   font-weight: 500;
+  animation: fadeInUp 0.3s ease both;
 }
 
 .gauge-wrap { text-align: center; flex-shrink: 0; }
