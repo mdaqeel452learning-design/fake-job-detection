@@ -1,19 +1,32 @@
 {% extends "base.html" %}
 {% block title %}JobShield AI — Fake Job Detector{% endblock %}
 {% block content %}
-<div class="page-header">
-  <h2>JobShield AI</h2>
-  <p>Paste a job posting below and let our AI instantly tell you if it's <span class="text-green">Real</span> or <span class="text-red">Fake.</span></p>
+<div class="hero">
+  <div class="hero-eyebrow">Free AI Job Scam Checker</div>
+  <h2 class="hero-title">Check if a job is <span class="accent">real</span><br>before you apply.</h2>
+  <p class="hero-sub">Paste any job posting below. Our model, scam-pattern rules, and vagueness checks combine into a clear verdict with a confidence score — no account required.</p>
+
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num" id="statTotal">{{ stats.total }}</div><div class="label">Total Predictions</div></div>
+    <div class="hero-stat"><div class="num" id="statFake">{{ stats.fake }}</div><div class="label">Flagged Fake</div></div>
+    <div class="hero-stat"><div class="num" id="statReal">{{ stats.real }}</div><div class="label">Flagged Real</div></div>
+    <div class="hero-stat"><div class="num">{{ metrics.accuracy ~ '%' if metrics.accuracy is not none else 'N/A' }}</div><div class="label">Model Accuracy</div></div>
+  </div>
+  <hr class="hero-divider">
 </div>
 
-<div class="card">
-  <h3>Enter Job Description</h3>
-  <textarea id="jobInput" class="job-input" placeholder="Paste the job title and description here..."></textarea>
-  <div class="word-count-hint" id="wordCountHint">0 words</div>
-
-  <div class="button-row">
-    <button id="predictBtn" class="btn btn-primary">🔍 Predict</button>
-    <button id="clearBtn" class="btn">🗑 Clear</button>
+<div class="tool-card">
+  <div class="tool-card-header">
+    <div class="tool-dots"><span></span><span></span><span></span></div>
+    <div class="tool-card-title">Paste job description</div>
+  </div>
+  <div class="tool-card-body">
+    <textarea id="jobInput" class="job-input" placeholder="Paste the job title and description here..."></textarea>
+    <div class="word-count-hint" id="wordCountHint">0 words</div>
+    <div class="button-row">
+      <button id="predictBtn" class="btn btn-primary">🔍 Predict</button>
+      <button id="clearBtn" class="btn">🗑 Clear</button>
+    </div>
   </div>
 </div>
 
@@ -38,13 +51,54 @@
   </div>
 </div>
 
-<div class="card">
-  <h3>Quick Statistics</h3>
-  <div class="stats-grid">
-    <div class="stat-card"><div class="stat-icon" style="background:var(--blue)">≡</div><div><p class="stat-title">Total Predictions</p><p class="stat-value" id="statTotal">{{ stats.total }}</p></div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:var(--red)">✕</div><div><p class="stat-title">Fake Jobs</p><p class="stat-value" id="statFake">{{ stats.fake }}</p></div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:var(--green)">✓</div><div><p class="stat-title">Real Jobs</p><p class="stat-value" id="statReal">{{ stats.real }}</p></div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:var(--purple)">◎</div><div><p class="stat-title">Accuracy</p><p class="stat-value">{{ metrics.accuracy ~ '%' if metrics.accuracy is not none else 'N/A' }}</p></div></div>
+<div class="section-header">
+  <div class="section-eyebrow">How It Works</div>
+  <h3>From paste to verdict in seconds</h3>
+  <p>Three steps, all running on the text you paste — no manual questions.</p>
+</div>
+<div class="steps-row">
+  <div class="step-card">
+    <div class="step-num-ring">1</div>
+    <h4>Paste the posting</h4>
+    <p>Copy the job title and full description text into the box above.</p>
+  </div>
+  <div class="step-card">
+    <div class="step-num-ring">2</div>
+    <h4>Signals run in combination</h4>
+    <p>The ML model, scam-pattern rules, and vagueness checks each independently score the text.</p>
+  </div>
+  <div class="step-card">
+    <div class="step-num-ring">3</div>
+    <h4>Get your verdict</h4>
+    <p>A clear Real/Fake label with a confidence score and the specific patterns that were matched.</p>
+  </div>
+</div>
+
+<div class="section-header">
+  <div class="section-eyebrow">Signal Breakdown</div>
+  <h3>What actually gets checked</h3>
+  <p>Every signal below runs on every scan. <a href="{{ url_for('how_it_works_page') }}" class="text-blue" style="font-weight:600;">See the full breakdown →</a></p>
+</div>
+<div class="signal-grid">
+  <div class="signal-item">
+    <div class="signal-num">01</div>
+    <h4>ML Model</h4>
+    <p>A neural network trained on ~18,000 real postings scores the TF-IDF vectorized text for fraud probability.</p>
+  </div>
+  <div class="signal-item">
+    <div class="signal-num">02</div>
+    <h4>Scam-Pattern Rules</h4>
+    <p>Known scam phrasing (fees, wire transfers, WhatsApp-only contact) weighted by severity, not an auto-override.</p>
+  </div>
+  <div class="signal-item">
+    <div class="signal-num">03</div>
+    <h4>Vagueness Check</h4>
+    <p>Flags postings that are too thin: no named company, no real way to apply, unusually short.</p>
+  </div>
+  <div class="signal-item">
+    <div class="signal-num">04</div>
+    <h4>AI Reasoning <span style="color:var(--muted); font-weight:500;">(optional)</span></h4>
+    <p>When configured, an open-weight LLM (Llama 3.3 via Groq) adds its own fraud score and plain-English explanation.</p>
   </div>
 </div>
 {% endblock %}

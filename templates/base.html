@@ -13,35 +13,27 @@
 </head>
 <body>
 <div id="routeProgress" class="route-progress"></div>
-<div class="app-shell">
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-icon">🛡️</div>
-      <h1>JobShield <span>AI</span></h1>
-      <p>Fake Job Detector</p>
-    </div>
-    <nav class="nav">
-      <a href="{{ url_for('index') }}" class="nav-link {{ 'active' if request.endpoint == 'index' }}"><span class="nav-icon">🏠</span> Home</a>
-      <a href="{{ url_for('history_page') }}" class="nav-link {{ 'active' if request.endpoint == 'history_page' }}"><span class="nav-icon">🕘</span> History</a>
-      <a href="{{ url_for('statistics_page') }}" class="nav-link {{ 'active' if request.endpoint == 'statistics_page' }}"><span class="nav-icon">📊</span> Statistics</a>
-      <a href="{{ url_for('about_page') }}" class="nav-link {{ 'active' if request.endpoint == 'about_page' }}"><span class="nav-icon">ℹ️</span> About</a>
-      <a href="{{ url_for('how_it_works_page') }}" class="nav-link {{ 'active' if request.endpoint == 'how_it_works_page' }}"><span class="nav-icon">⚙️</span> How It Works</a>
-      <a href="{{ url_for('contact_page') }}" class="nav-link {{ 'active' if request.endpoint == 'contact_page' }}"><span class="nav-icon">✉️</span> Contact</a>
-    </nav>
-    <div class="sidebar-note">
-      <h3>About Project</h3>
-      <p>This system uses NLP and Machine Learning to detect whether a job advertisement is
-        <span class="text-green">Real</span> or <span class="text-red">Fake.</span></p>
-    </div>
-  </aside>
-  <main class="content">
-    <div id="pageContent">{% block content %}{% endblock %}</div>
-    <footer class="footer">
-      <span>© 2026 JobShield AI</span>
-      <span class="text-blue">Built by Syed Nishath</span>
-    </footer>
-  </main>
-</div>
+<header class="topnav">
+  <div class="brand">
+    <div class="brand-icon">🛡️</div>
+    <h1>JobShield <span>AI</span></h1>
+  </div>
+  <nav class="nav">
+    <a href="{{ url_for('index') }}" class="nav-link {{ 'active' if request.endpoint == 'index' }}"><span class="nav-icon">🏠</span> Home</a>
+    <a href="{{ url_for('history_page') }}" class="nav-link {{ 'active' if request.endpoint == 'history_page' }}"><span class="nav-icon">🕘</span> History</a>
+    <a href="{{ url_for('statistics_page') }}" class="nav-link {{ 'active' if request.endpoint == 'statistics_page' }}"><span class="nav-icon">📊</span> Statistics</a>
+    <a href="{{ url_for('about_page') }}" class="nav-link {{ 'active' if request.endpoint == 'about_page' }}"><span class="nav-icon">ℹ️</span> About</a>
+    <a href="{{ url_for('how_it_works_page') }}" class="nav-link {{ 'active' if request.endpoint == 'how_it_works_page' }}"><span class="nav-icon">⚙️</span> How It Works</a>
+    <a href="{{ url_for('contact_page') }}" class="nav-link {{ 'active' if request.endpoint == 'contact_page' }}"><span class="nav-icon">✉️</span> Contact</a>
+  </nav>
+</header>
+<main class="content">
+  <div id="pageContent">{% block content %}{% endblock %}</div>
+  <footer class="footer">
+    <span>© 2026 JobShield AI</span>
+    <span class="text-blue">Built by Syed Nishath</span>
+  </footer>
+</main>
 <div class="toast-stack" id="toastStack"></div>
 <script>
 function showToast(message, type) {
