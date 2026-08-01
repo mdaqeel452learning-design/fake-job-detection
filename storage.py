@@ -2,29 +2,47 @@
 
 Uses Postgres when a DATABASE_URL env var is set (persists across
 redeploys/restarts — needed on free hosting tiers with ephemeral disks),
-otherwise falls back to a local JSON file (fine for local development).
+otherwise falls back to a local JSON file. Also falls back to the JSON
+file if the DB connection fails for any reason (bad URL, network issue),
+so a database misconfiguration degrades the history feature instead of
+crashing the whole site.
 """
 import json
 import os
+import sys
 from datetime import datetime, timezone
+from urllib.parse import urlsplit, urlunsplit
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 HISTORY_PATH = os.path.join(_BASE_DIR, "prediction_history.json")
 MAX_HISTORY = 500
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+_RAW_DATABASE_URL = os.environ.get("DATABASE_URL")
 
-if DATABASE_URL:
-    import psycopg2
-    import psycopg2.extras
 
-    def _get_conn():
-        return psycopg2.connect(DATABASE_URL, sslmode="require")
+def _clean_dsn(url: str) -> str:
+    """Strips query params libpq doesn't understand (e.g. Supabase's
+    "?pgbouncer=true", which is a hint for some ORMs, not a real
+    connection option — libpq rejects unknown params outright)."""
+    parts = urlsplit(url)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
 
-    def _init_db():
-        with _get_conn() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
+
+_db_ready = False
+
+if _RAW_DATABASE_URL:
+    try:
+        import psycopg2
+        import psycopg2.extras
+
+        DATABASE_URL = _clean_dsn(_RAW_DATABASE_URL)
+
+        def _get_conn():
+            return psycopg2.connect(DATABASE_URL, sslmode="require")
+
+        with _get_conn() as _conn:
+            with _conn.cursor() as _cur:
+                _cur.execute(
                     """
                     CREATE TABLE IF NOT EXISTS predictions (
                         id SERIAL PRIMARY KEY,
@@ -37,9 +55,17 @@ if DATABASE_URL:
                     )
                     """
                 )
-            conn.commit()
+            _conn.commit()
+        _db_ready = True
+    except Exception as exc:
+        print(
+            f"[storage] DATABASE_URL set but connection/init failed, "
+            f"falling back to local JSON file: {exc!r}",
+            file=sys.stderr,
+        )
+        _db_ready = False
 
-    _init_db()
+if _db_ready:
 
     def load_history():
         with _get_conn() as conn:
