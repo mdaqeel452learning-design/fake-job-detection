@@ -1,0 +1,176 @@
+"""Shared text preprocessing and hybrid fake-job scoring logic.
+
+Used by both train_model.py (to build the model) and app.py (to serve
+predictions), so training and inference always agree on how text is
+prepared and how the final decision is made.
+"""
+import os
+import re
+import pickle
+
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(_BASE_DIR, "model.pkl")
+VECTORIZER_PATH = os.path.join(_BASE_DIR, "vectorizer.pkl")
+METRICS_PATH = os.path.join(_BASE_DIR, "metrics.json")
+
+try:
+    from nltk.corpus import stopwords
+    from nltk.stem import WordNetLemmatizer
+except Exception:  # nltk not installed / corpora not downloaded
+    stopwords = None
+    WordNetLemmatizer = None
+
+_FALLBACK_STOPWORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has",
+    "he", "in", "is", "it", "its", "of", "on", "that", "the", "to", "was",
+    "were", "will", "with",
+}
+
+
+def _safe_stopwords():
+    if stopwords is None:
+        return set(_FALLBACK_STOPWORDS)
+    try:
+        return set(stopwords.words("english"))
+    except Exception:
+        return set(_FALLBACK_STOPWORDS)
+
+
+def _safe_lemmatizer():
+    if WordNetLemmatizer is None:
+        return None
+    try:
+        lemmatizer = WordNetLemmatizer()
+        lemmatizer.lemmatize("test")  # forces corpus load / raises if missing
+        return lemmatizer
+    except Exception:
+        return None
+
+
+lemmatizer = _safe_lemmatizer()
+stop_words = _safe_stopwords()
+
+
+def preprocess_text(text: str) -> str:
+    text = (text or "").lower()
+    text = re.sub(r"[^a-zA-Z]", " ", text)
+    words = text.split()
+    if lemmatizer is not None:
+        words = [lemmatizer.lemmatize(w) for w in words if w not in stop_words]
+    else:
+        words = [w for w in words if w not in stop_words]
+    return " ".join(words)
+
+
+# Strong, hard-to-fake-innocently scam indicators.
+HIGH_SEVERITY_PATTERNS = [
+    "registration fee",
+    "processing fee",
+    "pay a fee",
+    "small fee",
+    "security deposit",
+    "deposit required",
+    "send money",
+    "money to secure",
+    "wire transfer",
+    "western union",
+    "money gram",
+    "buy a starter kit",
+    "starter kit",
+    "investment required",
+    "whatsapp only",
+    "contact via telegram",
+    "telegram only",
+    "no interview needed",
+    "no interview required",
+    "no company name",
+    "pay before you start",
+    "training fee",
+]
+
+# Weaker indicators: common in real postings too, so they only nudge the
+# score rather than deciding it on their own.
+LOW_SEVERITY_PATTERNS = [
+    "no experience required",
+    "no prior experience",
+    "anyone can apply",
+    "earn money",
+    "easy money",
+    "guaranteed income",
+    "limited slots",
+    "first come",
+    "referral code",
+    "apply fast",
+    "immediate joining",
+    "urgently hiring",
+    "urgent hiring",
+    "joining bonus",
+    "weekly payment",
+    "no targets",
+    "no pressure",
+    "simple data entry",
+    "basic typing",
+    "hours daily and earn",
+]
+
+# How much weight the rule engine gets versus the ML model in the final
+# blended score. Kept below 0.5 so the ML model's judgment always has the
+# larger say, and a single weak phrase can no longer flip the verdict.
+RULE_WEIGHT = 0.35
+ML_WEIGHT = 1.0 - RULE_WEIGHT
+
+# Rule score (0..RULE_SCORE_CAP) beyond which the rule component saturates
+# at 1.0.
+RULE_SCORE_CAP = 6.0
+
+FAKE_THRESHOLD = 0.5
+
+
+def rule_based_check(text: str):
+    """Returns (raw_score, matched_patterns) for a piece of job text."""
+    text = (text or "").lower()
+    matched = []
+    score = 0.0
+    for pattern in HIGH_SEVERITY_PATTERNS:
+        if pattern in text:
+            score += 2.0
+            matched.append(pattern)
+    for pattern in LOW_SEVERITY_PATTERNS:
+        if pattern in text:
+            score += 1.0
+            matched.append(pattern)
+    return score, matched
+
+
+def _load_pickle(path):
+    with open(path, "rb") as f:
+        return pickle.load(f)
+
+
+class Detector:
+    """Loads the trained model/vectorizer once and scores job text."""
+
+    def __init__(self, model_path=MODEL_PATH, vectorizer_path=VECTORIZER_PATH):
+        self.model = _load_pickle(model_path)
+        self.vectorizer = _load_pickle(vectorizer_path)
+
+    def predict(self, text: str) -> dict:
+        cleaned = preprocess_text(text)
+        vector = self.vectorizer.transform([cleaned])
+        proba = self.model.predict_proba(vector)[0]
+        ml_prob_fake = float(proba[1]) if len(proba) > 1 else float(proba[0])
+
+        raw_rule_score, matched = rule_based_check(text)
+        rule_component = min(raw_rule_score / RULE_SCORE_CAP, 1.0)
+
+        final_score = ML_WEIGHT * ml_prob_fake + RULE_WEIGHT * rule_component
+        is_fake = final_score >= FAKE_THRESHOLD
+
+        return {
+            "is_fake": bool(is_fake),
+            "confidence": round(final_score * 100, 2) if is_fake else round((1 - final_score) * 100, 2),
+            "fake_probability": round(final_score * 100, 2),
+            "ml_probability": round(ml_prob_fake * 100, 2),
+            "rule_score": raw_rule_score,
+            "matched_patterns": matched,
+        }

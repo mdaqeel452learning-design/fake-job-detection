@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Contact - Fake Job Detection{% endblock %}
+{% block content %}
+<div class="top-row">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <a href="{{ url_for('index') }}" class="back-btn">← Back</a>
+    <h2>Contact</h2>
+  </div>
+</div>
+<div class="card">
+  <h3>Get in touch</h3>
+  <p style="font-size:13px; color:var(--muted); line-height:1.6;">
+    This project was built to help job seekers spot fraudulent postings before sharing personal
+    information or money. If you'd like to report an issue or suggest improvements to the
+    detection rules, reach out through the channel you normally use to share this project.
+  </p>
+</div>
+{% endblock %}

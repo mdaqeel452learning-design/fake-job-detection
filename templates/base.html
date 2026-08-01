@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Fake Job Detection System{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">🛡️</div>
+      <h1>Fake Job</h1>
+      <p>Detection System</p>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('index') }}" class="nav-link {{ 'active' if request.endpoint == 'index' }}">🏠 Home</a>
+      <a href="{{ url_for('history_page') }}" class="nav-link {{ 'active' if request.endpoint == 'history_page' }}">🕘 History</a>
+      <a href="{{ url_for('statistics_page') }}" class="nav-link {{ 'active' if request.endpoint == 'statistics_page' }}">📊 Statistics</a>
+      <a href="{{ url_for('about_page') }}" class="nav-link {{ 'active' if request.endpoint == 'about_page' }}">ℹ️ About</a>
+      <a href="{{ url_for('how_it_works_page') }}" class="nav-link {{ 'active' if request.endpoint == 'how_it_works_page' }}">⚙️ How It Works</a>
+      <a href="{{ url_for('contact_page') }}" class="nav-link {{ 'active' if request.endpoint == 'contact_page' }}">✉️ Contact</a>
+    </nav>
+    <div class="sidebar-note">
+      <h3>About Project</h3>
+      <p>This system uses NLP and Machine Learning to detect whether a job advertisement is
+        <span class="text-green">Real</span> or <span class="text-red">Fake.</span></p>
+    </div>
+  </aside>
+  <main class="content">
+    {% block content %}{% endblock %}
+    <footer class="footer">
+      <span>© 2026 Fake Job Detection System</span>
+      <span class="text-blue">Developed using Python, Flask, NLP &amp; Machine Learning</span>
+    </footer>
+  </main>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

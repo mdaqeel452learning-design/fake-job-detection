@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}History - Fake Job Detection{% endblock %}
+{% block content %}
+<div class="top-row">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <a href="{{ url_for('index') }}" class="back-btn">← Back</a>
+    <h2>History</h2>
+  </div>
+  <button id="clearHistoryBtn" class="btn btn-danger">🗑 Delete History</button>
+</div>
+<p style="color: var(--muted); font-size: 12px; margin-bottom: 16px;">Click an item to view the full job description.</p>
+
+<div id="historyList">
+  {% if not history %}
+  <div class="empty-state">No predictions yet. Go to Home to run a prediction.</div>
+  {% else %}
+    {% for item in history %}
+    <div class="history-item" onclick="showFull({{ loop.index0 }})">
+      <div class="history-text">{{ item.text[:110] }}{{ '…' if item.text|length > 110 else '' }}</div>
+      <div class="history-result">
+        <div class="verdict {{ 'fake' if item.is_fake else 'real' }}">{{ 'Fake' if item.is_fake else 'Real' }}</div>
+        <div class="conf">{{ item.confidence }}%</div>
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div id="fullModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:50; align-items:center; justify-content:center;">
+  <div style="background: var(--card); border-radius: 16px; padding: 20px; max-width: 700px; width: 90%; max-height: 80vh; overflow:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h3 id="modalVerdict" style="margin:0;"></h3>
+      <button onclick="closeModal()" class="btn">Close</button>
+    </div>
+    <p id="modalConf" style="color: var(--muted); font-size:12px;"></p>
+    <p id="modalText" style="white-space: pre-wrap; font-size:13px; line-height:1.6;"></p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const history = {{ history | tojson }};
+
+function showFull(idx) {
+  const item = history[idx];
+  document.getElementById('modalVerdict').textContent = item.is_fake ? 'Fake Job' : 'Real Job';
+  document.getElementById('modalVerdict').style.color = item.is_fake ? '#ef4444' : '#10b981';
+  document.getElementById('modalConf').textContent = 'Confidence: ' + item.confidence + '%';
+  document.getElementById('modalText').textContent = item.text;
+  document.getElementById('fullModal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('fullModal').style.display = 'none';
+}
+document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
+  if (!confirm('Delete all prediction history?')) return;
+  await fetch('/api/history/clear', { method: 'POST' });
+  window.location.reload();
+});
+</script>
+{% endblock %}

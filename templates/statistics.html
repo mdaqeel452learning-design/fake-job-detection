@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Statistics - Fake Job Detection{% endblock %}
+{% block content %}
+<div class="top-row">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <a href="{{ url_for('index') }}" class="back-btn">← Back</a>
+    <h2>Statistics</h2>
+  </div>
+</div>
+<p style="color: var(--muted); font-size: 12px; margin-bottom: 16px;">Auto-updated from saved prediction history and the model's measured test-set performance.</p>
+
+<div class="card">
+  <h3>Overview</h3>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon" style="background:var(--blue)">≡</div><div><p class="stat-title">Total Predictions</p><p class="stat-value">{{ stats.total }}</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--red)">✕</div><div><p class="stat-title">Fake Jobs</p><p class="stat-value">{{ stats.fake }}</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--green)">✓</div><div><p class="stat-title">Real Jobs</p><p class="stat-value">{{ stats.real }}</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--purple)">◎</div><div><p class="stat-title">Accuracy</p><p class="stat-value">{{ metrics.accuracy ~ '%' if metrics.accuracy is not none else 'N/A' }}</p></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Model Test-Set Performance</h3>
+  <p class="metrics-note">Measured on a held-out 20% test split (not seen during training), stratified to preserve the real ~5% fraud rate.</p>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon" style="background:var(--purple)">◎</div><div><p class="stat-title">Accuracy</p><p class="stat-value">{{ metrics.accuracy ~ '%' if metrics.accuracy is not none else 'N/A' }}</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--blue2)">P</div><div><p class="stat-title">Precision (Fake)</p><p class="stat-value">{{ metrics.precision ~ '%' if metrics.precision is not none else 'N/A' }}</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--pink)">R</div><div><p class="stat-title">Recall (Fake)</p><p class="stat-value">{{ metrics.recall ~ '%' if metrics.recall is not none else 'N/A' }}</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--green)">F1</div><div><p class="stat-title">F1 Score</p><p class="stat-value">{{ metrics.f1_score ~ '%' if metrics.f1_score is not none else 'N/A' }}</p></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Breakdown</h3>
+  <div class="stats-grid three">
+    <div class="stat-card"><div class="stat-icon" style="background:var(--red)">%</div><div><p class="stat-title">Fake Rate</p><p class="stat-value">{{ stats.fake_pct }}%</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--green)">%</div><div><p class="stat-title">Real Rate</p><p class="stat-value">{{ stats.real_pct }}%</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--blue2)">↗</div><div><p class="stat-title">Avg Confidence</p><p class="stat-value">{{ stats.avg_confidence }}%</p></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Charts</h3>
+  <div class="charts-row">
+    <div class="chart-box"><canvas id="pieChart"></canvas></div>
+    <div class="chart-box"><canvas id="barChart"></canvas></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Recent Predictions</h3>
+  {% if not recent %}
+  <div class="empty-state">No predictions yet.</div>
+  {% else %}
+    {% for item in recent %}
+    <div class="stat-recent-item">
+      <div class="history-text">{{ item.text[:110] }}{{ '…' if item.text|length > 110 else '' }}</div>
+      <div class="history-result">
+        <div class="verdict {{ 'fake' if item.is_fake else 'real' }}">{{ 'Fake' if item.is_fake else 'Real' }}</div>
+        <div class="conf">{{ item.confidence }}%</div>
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+const fake = {{ stats.fake }};
+const real = {{ stats.real }};
+
+new Chart(document.getElementById('pieChart'), {
+  type: 'pie',
+  data: {
+    labels: ['Fake', 'Real'],
+    datasets: [{ data: [fake, real], backgroundColor: ['#ef4444', '#10b981'] }]
+  },
+  options: {
+    plugins: { legend: { labels: { color: '#fff' } }, title: { display: true, text: 'Fake vs Real', color: '#fff' } }
+  }
+});
+
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Fake', 'Real'],
+    datasets: [{ data: [fake, real], backgroundColor: ['#ef4444', '#10b981'] }]
+  },
+  options: {
+    plugins: { legend: { display: false }, title: { display: true, text: 'Predictions Count', color: '#fff' } },
+    scales: {
+      x: { ticks: { color: '#fff' }, grid: { color: '#334155' } },
+      y: { ticks: { color: '#fff' }, grid: { color: '#334155' }, beginAtZero: true }
+    }
+  }
+});
+</script>
+{% endblock %}

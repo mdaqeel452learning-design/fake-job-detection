@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+prediction_history.json
+fake_job_postings.csv
+.claude/

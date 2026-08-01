@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}About - Fake Job Detection{% endblock %}
+{% block content %}
+<div class="top-row">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <a href="{{ url_for('index') }}" class="back-btn">← Back</a>
+    <h2>About</h2>
+  </div>
+</div>
+<p style="color: var(--muted); font-size: 12px; margin-bottom: 16px;">Learn more about this project.</p>
+
+<div class="about-hero">
+  <div class="icon">🔐</div>
+  <div class="text">
+    <h3>Fake Job Detection System</h3>
+    <p>This system is designed to detect whether a job advertisement is real or fake. It analyzes the content of job postings using a hybrid of a trained machine learning model and rule-based scam-pattern checks, and gives a clear prediction with a confidence score to help users avoid fraudulent opportunities.</p>
+  </div>
+</div>
+
+<div class="three-col">
+  <div class="card" style="margin-bottom:0;">
+    <div class="col-title"><span class="badge" style="background:var(--purple)">⚙</span> How It Works</div>
+    <div class="step-row"><div class="step-num">1</div><div><p class="step-title">Text Preprocessing</p><p class="step-desc">The job description is cleaned and lemmatized using NLP techniques.</p></div></div>
+    <div class="step-row"><div class="step-num">2</div><div><p class="step-title">Feature Extraction</p><p class="step-desc">Text is converted into numerical features using TF-IDF (unigrams + bigrams).</p></div></div>
+    <div class="step-row"><div class="step-num">3</div><div><p class="step-title">ML Model Prediction</p><p class="step-desc">A neural network (MLP Classifier) estimates the probability the posting is fraudulent.</p></div></div>
+    <div class="step-row"><div class="step-num">4</div><div><p class="step-title">Rule-Based Check</p><p class="step-desc">Known scam phrases are weighted by severity, not treated as an automatic override.</p></div></div>
+    <div class="step-row"><div class="step-num">5</div><div><p class="step-title">Final Decision</p><p class="step-desc">ML probability (65%) and rule signal (35%) are blended into one confidence score.</p></div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:0;">
+    <div class="col-title"><span class="badge" style="background:var(--blue)">⭐</span> Key Features</div>
+    <div class="feature-row"><div class="check">✓</div>Detects fake job advertisements</div>
+    <div class="feature-row"><div class="check">✓</div>Uses NLP for text processing</div>
+    <div class="feature-row"><div class="check">✓</div>Combines ML and weighted rule-based checks</div>
+    <div class="feature-row"><div class="check">✓</div>Provides a confidence score, not just a label</div>
+    <div class="feature-row"><div class="check">✓</div>Model accuracy is measured on a held-out test set</div>
+    <div class="feature-row"><div class="check">✓</div>Stores history and shows statistics</div>
+  </div>
+
+  <div class="card" style="margin-bottom:0;">
+    <div class="col-title"><span class="badge" style="background:var(--pink)">🎯</span> Why It Is Useful</div>
+    <div class="benefit-row"><div class="check pink">✓</div>Fake job postings are a major problem online</div>
+    <div class="benefit-row"><div class="check pink">✓</div>They can lead to financial loss and data theft</div>
+    <div class="benefit-row"><div class="check pink">✓</div>This system helps identify fraudulent offers</div>
+    <div class="benefit-row"><div class="check pink">✓</div>It saves time, money and protects personal information</div>
+    <div class="benefit-row"><div class="check pink">✓</div>Empowers users to make informed decisions before applying</div>
+  </div>
+</div>
+
+<div class="stats-grid two">
+  <div class="card" style="margin-bottom:0;">
+    <div class="col-title"><span class="badge" style="background:var(--blue2)">💻</span> Technologies Used</div>
+    <div class="stats-grid three">
+      <div class="stat-card" style="justify-content:center; text-align:center; flex-direction:column;">🐍<div style="font-size:11px; font-weight:700; margin-top:4px;">Python</div></div>
+      <div class="stat-card" style="justify-content:center; text-align:center; flex-direction:column;">📚<div style="font-size:11px; font-weight:700; margin-top:4px;">NLTK</div></div>
+      <div class="stat-card" style="justify-content:center; text-align:center; flex-direction:column;">🤖<div style="font-size:11px; font-weight:700; margin-top:4px;">Scikit-learn</div></div>
+      <div class="stat-card" style="justify-content:center; text-align:center; flex-direction:column;">🔢<div style="font-size:11px; font-weight:700; margin-top:4px;">TF-IDF</div></div>
+      <div class="stat-card" style="justify-content:center; text-align:center; flex-direction:column;">🧠<div style="font-size:11px; font-weight:700; margin-top:4px;">MLP</div></div>
+      <div class="stat-card" style="justify-content:center; text-align:center; flex-direction:column;">🌶️<div style="font-size:11px; font-weight:700; margin-top:4px;">Flask</div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:0;">
+    <div class="col-title"><span class="badge" style="background:var(--purple)">👤</span> Developed By</div>
+    <p style="font-size:12px; color: var(--muted);">A project created with the goal of making the job search process safer and more secure.</p>
+    <p style="font-size:12px; font-weight:700; color: var(--pink);">❤ Thanks for using!</p>
+  </div>
+</div>
+{% endblock %}

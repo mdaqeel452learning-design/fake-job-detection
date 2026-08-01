@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Fake Job Detection System{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Fake Job Detection System</h2>
+  <p>Enter job details below and let our AI model predict whether it is <span class="text-green">Real</span> or <span class="text-red">Fake.</span></p>
+</div>
+
+<div class="card">
+  <h3>Enter Job Description</h3>
+  <textarea id="jobInput" class="job-input" placeholder="Paste the job title and description here..."></textarea>
+  <div class="button-row">
+    <button id="predictBtn" class="btn btn-primary">🔍 Predict</button>
+    <button id="clearBtn" class="btn">🗑 Clear</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="top-row" style="margin-bottom: 6px;">
+    <h3 style="margin:0;">Prediction Result</h3>
+    <h3 style="margin:0;">Confidence Score</h3>
+  </div>
+  <div class="result-body">
+    <div class="result-icon-circle" id="resultIcon">⏳</div>
+    <div class="result-main">
+      <p class="result-label" id="resultLabel"></p>
+      <p class="result-desc" id="resultDesc">Enter a job description above and click Predict to see the result.</p>
+      <div class="matched-tags" id="matchedTags"></div>
+    </div>
+    <div class="gauge-wrap">
+      <canvas id="gaugeCanvas" width="86" height="86"></canvas>
+      <div class="gauge-pct" id="gaugePct"></div>
+      <div class="gauge-sub" id="gaugeSub"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Quick Statistics</h3>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon" style="background:var(--blue)">≡</div><div><p class="stat-title">Total Predictions</p><p class="stat-value" id="statTotal">{{ stats.total }}</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--red)">✕</div><div><p class="stat-title">Fake Jobs</p><p class="stat-value" id="statFake">{{ stats.fake }}</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--green)">✓</div><div><p class="stat-title">Real Jobs</p><p class="stat-value" id="statReal">{{ stats.real }}</p></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:var(--purple)">◎</div><div><p class="stat-title">Accuracy</p><p class="stat-value">{{ metrics.accuracy ~ '%' if metrics.accuracy is not none else 'N/A' }}</p></div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function drawGauge(canvas, confidence, isFake) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 86, 86);
+  const angle = confidence * 3.6 * Math.PI / 180;
+  ctx.beginPath();
+  ctx.arc(43, 43, 38, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#374151';
+  ctx.lineWidth = 7;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(43, 43, 38, -Math.PI / 2, -Math.PI / 2 + angle);
+  ctx.strokeStyle = isFake ? '#ef4444' : '#10b981';
+  ctx.lineWidth = 7;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 14px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(Math.round(confidence) + '%', 43, 43);
+}
+
+const jobInput = document.getElementById('jobInput');
+const predictBtn = document.getElementById('predictBtn');
+const clearBtn = document.getElementById('clearBtn');
+const resultIcon = document.getElementById('resultIcon');
+const resultLabel = document.getElementById('resultLabel');
+const resultDesc = document.getElementById('resultDesc');
+const matchedTags = document.getElementById('matchedTags');
+const gaugeCanvas = document.getElementById('gaugeCanvas');
+const gaugePct = document.getElementById('gaugePct');
+const gaugeSub = document.getElementById('gaugeSub');
+
+function resetResult() {
+  resultIcon.style.background = '#1f2937';
+  resultIcon.textContent = '⏳';
+  resultLabel.textContent = '';
+  resultDesc.textContent = 'Enter a job description above and click Predict to see the result.';
+  matchedTags.innerHTML = '';
+  gaugePct.textContent = '';
+  gaugeSub.textContent = '';
+  gaugeCanvas.getContext('2d').clearRect(0, 0, 86, 86);
+}
+
+clearBtn.addEventListener('click', () => {
+  jobInput.value = '';
+  resetResult();
+});
+
+predictBtn.addEventListener('click', async () => {
+  const text = jobInput.value.trim();
+  if (!text) {
+    resultIcon.style.background = '#1f2937';
+    resultIcon.textContent = '⚠️';
+    resultLabel.textContent = 'Please enter job description';
+    resultLabel.style.color = '#f59e0b';
+    resultDesc.textContent = 'Enter a valid job description above.';
+    return;
+  }
+
+  predictBtn.disabled = true;
+  predictBtn.textContent = 'Predicting...';
+  try {
+    const res = await fetch('/api/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Prediction failed');
+
+    const isFake = data.is_fake;
+    resultLabel.style.color = isFake ? '#ef4444' : '#10b981';
+    resultLabel.textContent = isFake ? 'Fake Job' : 'Real Job';
+    resultIcon.style.background = isFake ? '#ef4444' : '#10b981';
+    resultIcon.textContent = isFake ? '✕' : '✓';
+    resultDesc.textContent = isFake
+      ? 'This job advertisement is predicted to be FAKE. Be careful while sharing your personal information.'
+      : 'This job advertisement is predicted to be REAL. This looks like a trustworthy posting.';
+
+    matchedTags.innerHTML = '';
+    (data.matched_patterns || []).forEach(p => {
+      const tag = document.createElement('span');
+      tag.className = 'matched-tag';
+      tag.textContent = p;
+      matchedTags.appendChild(tag);
+    });
+
+    drawGauge(gaugeCanvas, data.fake_probability, isFake);
+    gaugePct.textContent = data.fake_probability + '%';
+    gaugeSub.textContent = isFake ? 'High Probability of Fake' : 'High Probability of Real';
+    gaugeSub.style.color = isFake ? '#ef4444' : '#10b981';
+
+    document.getElementById('statTotal').textContent = data.stats.total;
+    document.getElementById('statFake').textContent = data.stats.fake;
+    document.getElementById('statReal').textContent = data.stats.real;
+  } catch (err) {
+    resultLabel.style.color = '#f59e0b';
+    resultLabel.textContent = 'Error';
+    resultDesc.textContent = err.message;
+  } finally {
+    predictBtn.disabled = false;
+    predictBtn.textContent = '🔍 Predict';
+  }
+});
+</script>
+{% endblock %}

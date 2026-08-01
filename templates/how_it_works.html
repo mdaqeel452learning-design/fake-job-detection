@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}How It Works - Fake Job Detection{% endblock %}
+{% block content %}
+<div class="top-row">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <a href="{{ url_for('index') }}" class="back-btn">← Back</a>
+    <h2>How It Works</h2>
+  </div>
+</div>
+
+<div class="card">
+  <h3>1. Preprocessing</h3>
+  <p style="font-size:13px; color:var(--muted); line-height:1.6;">The job title and description are lowercased, stripped of non-letter characters, and lemmatized after removing common English stopwords.</p>
+</div>
+<div class="card">
+  <h3>2. TF-IDF Vectorization</h3>
+  <p style="font-size:13px; color:var(--muted); line-height:1.6;">The cleaned text is converted into a 3,000-feature TF-IDF vector using unigrams and bigrams, so short scam phrases (e.g. "processing fee") are captured, not just single words.</p>
+</div>
+<div class="card">
+  <h3>3. Machine Learning Model</h3>
+  <p style="font-size:13px; color:var(--muted); line-height:1.6;">A Multi-Layer Perceptron (neural network) classifier, trained on ~18,000 real job postings (about 5% labeled fraudulent), outputs a probability that the posting is fake. To counter the class imbalance, the fraudulent examples are oversampled during training only &mdash; the reported accuracy is measured on an untouched, realistically-imbalanced test set.</p>
+</div>
+<div class="card">
+  <h3>4. Rule-Based Signal</h3>
+  <p style="font-size:13px; color:var(--muted); line-height:1.6;">A separate check scans for known scam phrasing, split into high-severity signals (e.g. "registration fee", "wire transfer", "whatsapp only") and lower-severity signals that are common in legitimate postings too (e.g. "work from home", "urgent hiring"). Each is weighted accordingly instead of being treated as an all-or-nothing override.</p>
+</div>
+<div class="card">
+  <h3>5. Final Decision</h3>
+  <p style="font-size:13px; color:var(--muted); line-height:1.6;">The final score blends the ML probability (65% weight) with the normalized rule-based score (35% weight). A posting is only flagged Fake if the blended score crosses 50% &mdash; so one generic phrase alone can no longer flip a legitimate posting to Fake.</p>
+</div>
+{% endblock %}

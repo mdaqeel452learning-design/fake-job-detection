@@ -1,0 +1,25 @@
+{
+  "accuracy": 97.79,
+  "precision": 77.98,
+  "recall": 75.72,
+  "f1_score": 76.83,
+  "confusion_matrix": {
+    "labels": [
+      "Real",
+      "Fake"
+    ],
+    "matrix": [
+      [
+        3366,
+        37
+      ],
+      [
+        42,
+        131
+      ]
+    ]
+  },
+  "test_size": 3576,
+  "train_size": 27222,
+  "trained_at": "2026-08-01T09:29:43.221913+00:00"
+}
