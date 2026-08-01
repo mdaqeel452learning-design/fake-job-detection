@@ -51,6 +51,7 @@
 
 {% block scripts %}
 <script>
+(function () {
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
 function animateGauge(canvas, targetConfidence, isFake, onFrame) {
@@ -245,5 +246,6 @@ predictBtn.addEventListener('click', async () => {
     predictBtn.innerHTML = '🔍 Predict';
   }
 });
+})();
 </script>
 {% endblock %}

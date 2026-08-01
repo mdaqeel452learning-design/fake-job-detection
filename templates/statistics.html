@@ -68,33 +68,35 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
-const fake = {{ stats.fake }};
-const real = {{ stats.real }};
+(function () {
+  const fake = {{ stats.fake }};
+  const real = {{ stats.real }};
 
-new Chart(document.getElementById('pieChart'), {
-  type: 'pie',
-  data: {
-    labels: ['Fake', 'Real'],
-    datasets: [{ data: [fake, real], backgroundColor: ['#ef4444', '#10b981'] }]
-  },
-  options: {
-    plugins: { legend: { labels: { color: '#fff' } }, title: { display: true, text: 'Fake vs Real', color: '#fff' } }
-  }
-});
-
-new Chart(document.getElementById('barChart'), {
-  type: 'bar',
-  data: {
-    labels: ['Fake', 'Real'],
-    datasets: [{ data: [fake, real], backgroundColor: ['#ef4444', '#10b981'] }]
-  },
-  options: {
-    plugins: { legend: { display: false }, title: { display: true, text: 'Predictions Count', color: '#fff' } },
-    scales: {
-      x: { ticks: { color: '#fff' }, grid: { color: '#334155' } },
-      y: { ticks: { color: '#fff' }, grid: { color: '#334155' }, beginAtZero: true }
+  new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Fake', 'Real'],
+      datasets: [{ data: [fake, real], backgroundColor: ['#ef4444', '#10b981'] }]
+    },
+    options: {
+      plugins: { legend: { labels: { color: '#fff' } }, title: { display: true, text: 'Fake vs Real', color: '#fff' } }
     }
-  }
-});
+  });
+
+  new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Fake', 'Real'],
+      datasets: [{ data: [fake, real], backgroundColor: ['#ef4444', '#10b981'] }]
+    },
+    options: {
+      plugins: { legend: { display: false }, title: { display: true, text: 'Predictions Count', color: '#fff' } },
+      scales: {
+        x: { ticks: { color: '#fff' }, grid: { color: '#334155' } },
+        y: { ticks: { color: '#fff' }, grid: { color: '#334155' }, beginAtZero: true }
+      }
+    }
+  });
+})();
 </script>
 {% endblock %}

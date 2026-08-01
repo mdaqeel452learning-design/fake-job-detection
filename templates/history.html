@@ -40,23 +40,29 @@
 
 {% block scripts %}
 <script>
-const history = {{ history | tojson }};
+(function () {
+  const historyItems = {{ history | tojson }};
 
-function showFull(idx) {
-  const item = history[idx];
-  document.getElementById('modalVerdict').textContent = item.is_fake ? 'Fake Job' : 'Real Job';
-  document.getElementById('modalVerdict').style.color = item.is_fake ? '#ef4444' : '#10b981';
-  document.getElementById('modalConf').textContent = 'Confidence: ' + item.confidence + '%';
-  document.getElementById('modalText').textContent = item.text;
-  document.getElementById('fullModal').style.display = 'flex';
-}
-function closeModal() {
-  document.getElementById('fullModal').style.display = 'none';
-}
-document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
-  if (!confirm('Delete all prediction history?')) return;
-  await fetch('/api/history/clear', { method: 'POST' });
-  window.location.reload();
-});
+  function showFull(idx) {
+    const item = historyItems[idx];
+    document.getElementById('modalVerdict').textContent = item.is_fake ? 'Fake Job' : 'Real Job';
+    document.getElementById('modalVerdict').style.color = item.is_fake ? '#ef4444' : '#10b981';
+    document.getElementById('modalConf').textContent = 'Confidence: ' + item.confidence + '%';
+    document.getElementById('modalText').textContent = item.text;
+    document.getElementById('fullModal').style.display = 'flex';
+  }
+  function closeModal() {
+    document.getElementById('fullModal').style.display = 'none';
+  }
+  // Exposed globally: called from inline onclick="" attributes in the markup above.
+  window.showFull = showFull;
+  window.closeModal = closeModal;
+
+  document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
+    if (!confirm('Delete all prediction history?')) return;
+    await fetch('/api/history/clear', { method: 'POST' });
+    window.location.reload();
+  });
+})();
 </script>
 {% endblock %}

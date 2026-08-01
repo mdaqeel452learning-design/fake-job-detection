@@ -15,6 +15,22 @@
 
 * { box-sizing: border-box; }
 
+html { scroll-behavior: smooth; }
+
+.route-progress {
+  position: fixed;
+  top: 0; left: 0;
+  width: 0%;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  box-shadow: 0 0 10px rgba(59,130,246,0.6);
+  z-index: 1100;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#pageContent { min-height: 40px; }
+
 body {
   margin: 0;
   background:
@@ -424,4 +440,13 @@ textarea.job-input:focus {
   .app-shell { flex-direction: column; }
   .sidebar { width: 100%; }
   .stats-grid, .stats-grid.three, .stats-grid.two, .three-col, .charts-row { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

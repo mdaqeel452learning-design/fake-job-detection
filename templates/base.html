@@ -12,6 +12,7 @@
 {% block head %}{% endblock %}
 </head>
 <body>
+<div id="routeProgress" class="route-progress"></div>
 <div class="app-shell">
   <aside class="sidebar">
     <div class="brand">
@@ -34,7 +35,7 @@
     </div>
   </aside>
   <main class="content">
-    {% block content %}{% endblock %}
+    <div id="pageContent">{% block content %}{% endblock %}</div>
     <footer class="footer">
       <span>© 2026 JobShield AI</span>
       <span class="text-blue">Built by Syed Nishath</span>
@@ -58,6 +59,142 @@ function showToast(message, type) {
   }, 4000);
 }
 </script>
-{% block scripts %}{% endblock %}
+<div id="pageScripts">{% block scripts %}{% endblock %}</div>
+<script>
+// Lightweight same-origin router: swaps #pageContent instead of doing a
+// full document navigation, so the sidebar never flashes/reloads between
+// pages. Falls back to a real navigation on any failure - every route is
+// still a complete, independently-loadable page for direct links/refresh.
+(function () {
+  var contentEl = document.getElementById('pageContent');
+  var scriptsEl = document.getElementById('pageScripts');
+  var bar = document.getElementById('routeProgress');
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function isRoutableLink(link) {
+    if (!link || !link.href) return false;
+    if (link.target === '_blank' || link.hasAttribute('download')) return false;
+    var raw = link.getAttribute('href') || '';
+    if (raw.startsWith('#') || raw.startsWith('mailto:') || raw.startsWith('tel:')) return false;
+    var url;
+    try { url = new URL(link.href, window.location.href); } catch (e) { return false; }
+    return url.origin === window.location.origin;
+  }
+
+  function startBar() {
+    bar.style.transition = 'none';
+    bar.style.opacity = '1';
+    bar.style.width = '0%';
+    // force reflow so the next transition actually animates from 0%
+    void bar.offsetWidth;
+    bar.style.transition = 'width 0.5s ease';
+    bar.style.width = '72%';
+  }
+
+  function finishBar() {
+    bar.style.transition = 'width 0.2s ease';
+    bar.style.width = '100%';
+    setTimeout(function () {
+      bar.style.transition = 'opacity 0.25s ease';
+      bar.style.opacity = '0';
+    }, 150);
+  }
+
+  function updateActiveNav() {
+    var links = document.querySelectorAll('.nav-link');
+    for (var i = 0; i < links.length; i++) {
+      var a = links[i];
+      var path = new URL(a.href, window.location.href).pathname;
+      a.classList.toggle('active', path === window.location.pathname);
+    }
+  }
+
+  function runScripts(container) {
+    var scripts = Array.prototype.slice.call(container.querySelectorAll('script'));
+    var chain = Promise.resolve();
+    scripts.forEach(function (old) {
+      chain = chain.then(function () {
+        return new Promise(function (resolve) {
+          var s = document.createElement('script');
+          for (var i = 0; i < old.attributes.length; i++) {
+            s.setAttribute(old.attributes[i].name, old.attributes[i].value);
+          }
+          if (old.src) {
+            if (document.querySelector('script[src="' + old.getAttribute('src') + '"]')) {
+              resolve();
+              return;
+            }
+            s.onload = resolve;
+            s.onerror = resolve;
+            document.body.appendChild(s);
+          } else {
+            s.textContent = old.textContent;
+            document.body.appendChild(s);
+            resolve();
+          }
+        });
+      });
+    });
+    return chain;
+  }
+
+  function navigate(url, push) {
+    startBar();
+    fetch(url, { headers: { 'X-Requested-With': 'router' } })
+      .then(function (res) {
+        if (!res.ok) throw new Error('navigation failed');
+        return res.text();
+      })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var newContent = doc.getElementById('pageContent');
+        var newScripts = doc.getElementById('pageScripts');
+        if (!newContent) throw new Error('no #pageContent in response');
+
+        var swap = function () {
+          document.title = doc.title;
+          contentEl.innerHTML = newContent.innerHTML;
+          contentEl.style.opacity = '1';
+          scriptsEl.innerHTML = '';
+          if (newScripts) scriptsEl.innerHTML = newScripts.innerHTML;
+          window.scrollTo(0, 0);
+          updateActiveNav();
+          if (push) window.history.pushState({ url: url }, '', url);
+          finishBar();
+          return runScripts(scriptsEl);
+        };
+
+        if (reduceMotion) {
+          return swap();
+        }
+        contentEl.style.transition = 'opacity 0.15s ease';
+        contentEl.style.opacity = '0';
+        return new Promise(function (resolve) { setTimeout(resolve, 150); }).then(swap);
+      })
+      .catch(function () {
+        window.location.href = url;
+      });
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var link = e.target.closest('a');
+    if (!isRoutableLink(link)) return;
+    var dest = new URL(link.href, window.location.href);
+    if (dest.pathname === window.location.pathname && dest.search === window.location.search) {
+      e.preventDefault();
+      return;
+    }
+    e.preventDefault();
+    navigate(link.href, true);
+  });
+
+  window.addEventListener('popstate', function () {
+    navigate(window.location.href, false);
+  });
+
+  updateActiveNav();
+})();
+</script>
 </body>
 </html>
