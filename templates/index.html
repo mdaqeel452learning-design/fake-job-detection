@@ -128,7 +128,7 @@ function drawGauge(canvas, confidence, isFake) {
   const angle = confidence * 3.6 * Math.PI / 180;
   ctx.beginPath();
   ctx.arc(43, 43, 38, 0, 2 * Math.PI);
-  ctx.strokeStyle = '#e1e3ec';
+  ctx.strokeStyle = '#374151';
   ctx.lineWidth = 7;
   ctx.stroke();
 
@@ -139,7 +139,7 @@ function drawGauge(canvas, confidence, isFake) {
   ctx.lineCap = 'round';
   ctx.stroke();
 
-  ctx.fillStyle = '#1b1d2b';
+  ctx.fillStyle = '#fff';
   ctx.font = 'bold 14px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -184,7 +184,7 @@ updateWordCount();
 
 function resetResult() {
   resultCard.classList.remove('predict-loading');
-  resultIcon.style.background = '';
+  resultIcon.style.background = '#1f2937';
   resultIcon.textContent = '⏳';
   resultLabel.textContent = '';
   resultDesc.textContent = 'Enter a job description above and click Predict to see the result.';
@@ -207,7 +207,7 @@ predictBtn.addEventListener('click', async () => {
   const text = jobInput.value.trim();
   if (!text) {
     resultCard.classList.remove('predict-loading');
-    resultIcon.style.background = '';
+    resultIcon.style.background = '#1f2937';
     resultIcon.textContent = '⚠️';
     resultLabel.textContent = 'Please enter job description';
     resultLabel.style.color = '#f59e0b';
