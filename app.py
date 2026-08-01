@@ -69,18 +69,7 @@ def api_predict():
     if not text:
         return jsonify({"error": "Please enter a job description."}), 400
 
-    def tri_state(value):
-        if value in (True, "yes", "true", "1", 1):
-            return True
-        if value in (False, "no", "false", "0", 0):
-            return False
-        return None
-
-    has_logo = tri_state(payload.get("has_logo"))
-    has_profile = tri_state(payload.get("has_profile"))
-    has_salary = tri_state(payload.get("has_salary"))
-
-    result = detector.predict(text, has_logo=has_logo, has_profile=has_profile, has_salary=has_salary)
+    result = detector.predict(text)
 
     history = load_history()
     history.append(

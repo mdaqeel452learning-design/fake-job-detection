@@ -10,7 +10,6 @@ from datetime import datetime, timezone
 
 import nltk
 import pandas as pd
-from scipy.sparse import hstack
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import (
     accuracy_score,
@@ -37,34 +36,18 @@ def main():
     data["text"] = data["title"].fillna("") + " " + data["description"].fillna("")
     data["clean_text"] = data["text"].apply(preprocess_text)
 
-    # Structural signals: by far the strongest fraud predictors in this
-    # dataset (see README), but invisible to a text-only model. They mirror
-    # what the web form now asks the user directly, so training and serving
-    # use the exact same three columns.
-    data["has_company_logo"] = data["has_company_logo"].fillna(0).astype(float)
-    data["has_company_profile"] = (
-        data["company_profile"].fillna("").str.strip().str.len() > 0
-    ).astype(float)
-    data["has_salary_range"] = (
-        data["salary_range"].fillna("").str.strip().str.len() > 0
-    ).astype(float)
-
     X_text = data["clean_text"]
-    X_struct = data[["has_company_logo", "has_company_profile", "has_salary_range"]]
     y = data["fraudulent"].astype(int)
 
     # Held-out test set, stratified so the ~5% fraud rate is preserved in
     # both splits — this is what makes the reported accuracy trustworthy.
-    X_text_train, X_text_test, X_struct_train, X_struct_test, y_train, y_test = train_test_split(
-        X_text, X_struct, y, test_size=0.2, random_state=42, stratify=y
+    X_train_text, X_test_text, y_train, y_test = train_test_split(
+        X_text, y, test_size=0.2, random_state=42, stratify=y
     )
 
     vectorizer = TfidfVectorizer(max_features=3000, ngram_range=(1, 2), min_df=3)
-    X_text_train_vec = vectorizer.fit_transform(X_text_train)
-    X_text_test_vec = vectorizer.transform(X_text_test)
-
-    X_train = hstack([X_text_train_vec, X_struct_train.values]).tocsr()
-    X_test = hstack([X_text_test_vec, X_struct_test.values]).tocsr()
+    X_train = vectorizer.fit_transform(X_train_text)
+    X_test = vectorizer.transform(X_test_text)
 
     # The dataset is heavily imbalanced (~5% fraudulent). MLPClassifier has
     # no class_weight support, so balance the *training* set only via
@@ -103,7 +86,7 @@ def main():
         "confusion_matrix": {"labels": ["Real", "Fake"], "matrix": cm},
         "test_size": int(len(y_test)),
         "train_size": int(len(y_train_bal)),
-        "features": "TF-IDF(title+description) + has_company_logo + has_company_profile + has_salary_range",
+        "features": "TF-IDF(title+description), unigrams+bigrams, fully automatic",
         "trained_at": datetime.now(timezone.utc).isoformat(),
     }
 

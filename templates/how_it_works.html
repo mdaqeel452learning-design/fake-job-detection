@@ -25,11 +25,11 @@
   <p style="font-size:13px; color:var(--muted); line-height:1.6;">A separate check scans for known scam phrasing, split into high-severity signals (e.g. "registration fee", "wire transfer", "whatsapp only") and lower-severity signals that are common in legitimate postings too (e.g. "work from home", "urgent hiring"). Each is weighted accordingly instead of being treated as an all-or-nothing override.</p>
 </div>
 <div class="card">
-  <h3>5. Structural Signals</h3>
-  <p style="font-size:13px; color:var(--muted); line-height:1.6;">Wording alone misses a lot: many scam postings read perfectly cleanly. In the training data, whether a posting has a company logo or a company profile is a far stronger fraud signal than any phrase &mdash; 82% of real postings have a logo vs. only 33% of fake ones, and 84% vs. 32% for a company profile. The form lets you optionally answer these (and whether a salary range is listed) from the actual posting, and they're fed into the model as extra features alongside the text.</p>
+  <h3>5. Final Decision</h3>
+  <p style="font-size:13px; color:var(--muted); line-height:1.6;">The ML probability and the rule-based score are combined as a probabilistic OR, not a weighted average: either a confident ML judgment on its own, or overwhelming rule evidence (several severe scam phrases together) on its own, can push a posting to Fake. A single weak or generic phrase still can't decide anything by itself &mdash; it only produces a small rule signal that needs real ML agreement to cross the 50% threshold. This fixes a gap a simple weighted blend had: capping the rule engine's influence low enough to stop one generic phrase from dominating also meant that maxed-out rule evidence (multiple severe matches) could never cross the threshold on its own whenever the ML model happened to disagree &mdash; even for blatant scam text.</p>
 </div>
 <div class="card">
-  <h3>6. Final Decision</h3>
-  <p style="font-size:13px; color:var(--muted); line-height:1.6;">The final score blends the ML probability (which already includes the structural signals, when provided) with the normalized rule-based score (65%/35% weighting). A posting is only flagged Fake if the blended score crosses 50% &mdash; so one generic phrase, or one missing signal, can no longer flip a legitimate posting to Fake on its own.</p>
+  <h3>Limits worth knowing</h3>
+  <p style="font-size:13px; color:var(--muted); line-height:1.6;">Detection runs entirely on the pasted text &mdash; no manual questions, no extra input. That also means signals that aren't in the text can't be used: the single strongest fraud predictor in the raw training data, for instance, is whether the original listing shows a company logo (82% of real postings vs. 33% of fake ones), which is a visual element of the original page and never present in pasted text. A posting with completely clean wording, no scam phrases, and no salary bait can still legitimately score as Real even if it's short or vague &mdash; vagueness alone isn't fraud, and a detector tuned to flag every terse posting would just train people to ignore its warnings.</p>
 </div>
 {% endblock %}

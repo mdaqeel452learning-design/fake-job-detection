@@ -8,28 +8,10 @@ import os
 import re
 import pickle
 
-from scipy.sparse import hstack, csr_matrix
-
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(_BASE_DIR, "model.pkl")
 VECTORIZER_PATH = os.path.join(_BASE_DIR, "vectorizer.pkl")
 METRICS_PATH = os.path.join(_BASE_DIR, "metrics.json")
-
-# Structural fields, in the fixed order they're appended to the TF-IDF
-# vector. These were picked because they're by far the strongest fraud
-# predictors in the training data (e.g. 82% of real postings have a company
-# logo vs. 33% of fake ones) yet are invisible to a text-only model.
-STRUCT_FIELDS = ("has_company_logo", "has_company_profile", "has_salary_range")
-UNKNOWN = 0.5  # used when the user hasn't answered / dataset value is missing
-
-
-def struct_feature_vector(has_logo=None, has_profile=None, has_salary=None) -> list:
-    def enc(v):
-        if v is None:
-            return UNKNOWN
-        return 1.0 if v else 0.0
-
-    return [enc(has_logo), enc(has_profile), enc(has_salary)]
 
 try:
     from nltk.corpus import stopwords
@@ -131,12 +113,6 @@ LOW_SEVERITY_PATTERNS = [
     "hours daily and earn",
 ]
 
-# How much weight the rule engine gets versus the ML model in the final
-# blended score. Kept below 0.5 so the ML model's judgment always has the
-# larger say, and a single weak phrase can no longer flip the verdict.
-RULE_WEIGHT = 0.35
-ML_WEIGHT = 1.0 - RULE_WEIGHT
-
 # Rule score (0..RULE_SCORE_CAP) beyond which the rule component saturates
 # at 1.0.
 RULE_SCORE_CAP = 6.0
@@ -172,11 +148,9 @@ class Detector:
         self.model = _load_pickle(model_path)
         self.vectorizer = _load_pickle(vectorizer_path)
 
-    def predict(self, text: str, has_logo=None, has_profile=None, has_salary=None) -> dict:
+    def predict(self, text: str) -> dict:
         cleaned = preprocess_text(text)
-        text_vector = self.vectorizer.transform([cleaned])
-        struct_vector = csr_matrix([struct_feature_vector(has_logo, has_profile, has_salary)])
-        vector = hstack([text_vector, struct_vector]).tocsr()
+        vector = self.vectorizer.transform([cleaned])
 
         proba = self.model.predict_proba(vector)[0]
         ml_prob_fake = float(proba[1]) if len(proba) > 1 else float(proba[0])
@@ -184,7 +158,18 @@ class Detector:
         raw_rule_score, matched = rule_based_check(text)
         rule_component = min(raw_rule_score / RULE_SCORE_CAP, 1.0)
 
-        final_score = ML_WEIGHT * ml_prob_fake + RULE_WEIGHT * rule_component
+        # Combine as a probabilistic OR, not a weighted average: either a
+        # confident ML judgment OR overwhelming rule evidence (several
+        # severe scam phrases) can independently push a posting to Fake.
+        # A weighted average can't do this — with rule weight kept low
+        # enough that one generic phrase can't dominate, maxed-out rule
+        # evidence alone was structurally incapable of crossing the
+        # threshold whenever the ML model happened to disagree, even for
+        # blatant scam text with 4+ matched phrases. A single weak/generic
+        # phrase still can't decide anything on its own here, since it only
+        # produces a small rule_component (e.g. ~0.17 for one low-severity
+        # match), which needs substantial ML agreement to cross 0.5.
+        final_score = 1.0 - (1.0 - ml_prob_fake) * (1.0 - rule_component)
         is_fake = final_score >= FAKE_THRESHOLD
 
         return {
@@ -194,14 +179,4 @@ class Detector:
             "ml_probability": round(ml_prob_fake * 100, 2),
             "rule_score": raw_rule_score,
             "matched_patterns": matched,
-            "struct_flags": _struct_concerns(has_logo, has_profile, has_salary),
         }
-
-
-def _struct_concerns(has_logo, has_profile, has_salary) -> list:
-    concerns = []
-    if has_logo is False:
-        concerns.append("No company logo on the posting")
-    if has_profile is False:
-        concerns.append("No company profile/description given")
-    return concerns

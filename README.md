@@ -70,22 +70,33 @@ not a bug. For persistent history, swap the JSON file for a hosted database
 
 - **Reliability fix**: the old logic treated a single matched keyword
   (even generic phrases like "work from home") as an automatic Fake verdict,
-  regardless of what the ML model predicted. It's now a weighted blend
-  (65% ML probability + 35% rule signal), so one generic phrase can no
-  longer flip a legitimate posting to Fake. See `detection.py`.
+  regardless of what the ML model predicted. ML probability and the rule
+  score are now combined as a probabilistic OR (`1 - (1-ml)*(1-rule)`), not
+  a weighted average: either a confident ML judgment or overwhelming rule
+  evidence (several severe scam phrases together) can independently flag
+  Fake, but a single weak/generic phrase still can't decide anything alone.
+  A weighted average was tried first but had a structural flaw — capping
+  the rule weight low enough to stop one phrase from dominating also meant
+  maxed-out rule evidence could never cross the threshold on its own if the
+  ML model happened to disagree, even for blatant multi-red-flag scam text.
+  See `detection.py`.
 - **Real accuracy**: `train_model.py` now does a stratified train/test split
   and reports measured accuracy/precision/recall/F1 on a held-out set
   (`metrics.json`), instead of a hardcoded "94.12%" string.
 - **Class imbalance handling**: the training set (only) is balanced via
   oversampling of the minority (fraudulent) class; the test set stays at the
   real ~5% fraud rate for a trustworthy accuracy number.
-- **Structural signals**: text alone misses a lot of fraud — many scam
-  postings read perfectly cleanly. In the training data, `has_company_logo`
-  and `has_company_profile` are far stronger fraud predictors than any
-  wording pattern (82%/84% present in real postings vs. 33%/32% in fake
-  ones). The web form now optionally asks the user these two questions plus
-  salary-range presence, and `train_model.py`/`detection.py` feed them into
-  the model as extra features alongside the TF-IDF text. Tested in
-  isolation, these three fields alone only reach 16% precision (too noisy
-  to use as a hard rule) — which is why they're blended into the model
-  rather than used as an override, same principle as the rule-based check.
+- **Fully automatic, text-only**: the training data's strongest fraud
+  predictor by far is `has_company_logo`/`has_company_profile` (82%/84%
+  present in real postings vs. 33%/32% in fake ones) — but that's a visual
+  attribute of the original listing page, never present in pasted text, so
+  it can't be used here without asking the user extra questions. Two
+  automatically-extractable text proxies (salary/pay mention, ALL-CAPS
+  ratio) were tried and measured with a standalone AUC of only 0.593
+  (barely above chance) — too weak to reliably help, so the model stays
+  plain TF-IDF text. Prediction requires nothing but the pasted text;
+  there's no manual input of any kind. Note: exact accuracy/precision/
+  recall numbers in `metrics.json` can shift by a couple of points between
+  retrains even with the same code, due to normal floating-point
+  non-determinism in neural network training — check `metrics.json` for
+  the actual numbers behind the currently-deployed model.

@@ -10,34 +10,6 @@
   <h3>Enter Job Description</h3>
   <textarea id="jobInput" class="job-input" placeholder="Paste the job title and description here..."></textarea>
 
-  <div class="struct-questions">
-    <p class="struct-hint">Optional — look at the actual posting/company page and answer if you can. These are the single strongest fraud signals in our training data, far stronger than any wording pattern.</p>
-    <div class="struct-row">
-      <label>Does the posting show a company logo?</label>
-      <select id="hasLogo" class="tri-select">
-        <option value="">Not sure</option>
-        <option value="yes">Yes</option>
-        <option value="no">No</option>
-      </select>
-    </div>
-    <div class="struct-row">
-      <label>Does it include a company profile/description?</label>
-      <select id="hasProfile" class="tri-select">
-        <option value="">Not sure</option>
-        <option value="yes">Yes</option>
-        <option value="no">No</option>
-      </select>
-    </div>
-    <div class="struct-row">
-      <label>Does it list a specific salary range?</label>
-      <select id="hasSalary" class="tri-select">
-        <option value="">Not sure</option>
-        <option value="yes">Yes</option>
-        <option value="no">No</option>
-      </select>
-    </div>
-  </div>
-
   <div class="button-row">
     <button id="predictBtn" class="btn btn-primary">🔍 Predict</button>
     <button id="clearBtn" class="btn">🗑 Clear</button>
@@ -125,9 +97,6 @@ function resetResult() {
 
 clearBtn.addEventListener('click', () => {
   jobInput.value = '';
-  document.getElementById('hasLogo').value = '';
-  document.getElementById('hasProfile').value = '';
-  document.getElementById('hasSalary').value = '';
   resetResult();
 });
 
@@ -148,12 +117,7 @@ predictBtn.addEventListener('click', async () => {
     const res = await fetch('/api/predict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text,
-        has_logo: document.getElementById('hasLogo').value || null,
-        has_profile: document.getElementById('hasProfile').value || null,
-        has_salary: document.getElementById('hasSalary').value || null,
-      })
+      body: JSON.stringify({ text })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Prediction failed');
@@ -169,12 +133,6 @@ predictBtn.addEventListener('click', async () => {
 
     matchedTags.innerHTML = '';
     (data.matched_patterns || []).forEach(p => {
-      const tag = document.createElement('span');
-      tag.className = 'matched-tag';
-      tag.textContent = p;
-      matchedTags.appendChild(tag);
-    });
-    (data.struct_flags || []).forEach(p => {
       const tag = document.createElement('span');
       tag.className = 'matched-tag';
       tag.textContent = p;
