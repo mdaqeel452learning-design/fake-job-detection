@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Contact - Fake Job Detection{% endblock %}
+{% block title %}Contact - JobShield AI{% endblock %}
 {% block content %}
 <div class="top-row">
   <div style="display:flex; align-items:center; gap:12px;">
@@ -7,12 +7,23 @@
     <h2>Contact</h2>
   </div>
 </div>
+
+<div class="card contact-card">
+  <div class="contact-avatar">SN</div>
+  <div class="contact-info">
+    <h4>Developed by Syed Nishath</h4>
+    <p style="font-size:13px; color:var(--muted); margin: 4px 0 8px;">Creator of JobShield AI</p>
+    <a href="mailto:syedanishath2306@gmail.com">syedanishath2306@gmail.com</a>
+  </div>
+</div>
+
 <div class="card">
   <h3>Get in touch</h3>
   <p style="font-size:13px; color:var(--muted); line-height:1.6;">
     This project was built to help job seekers spot fraudulent postings before sharing personal
-    information or money. If you'd like to report an issue or suggest improvements to the
-    detection rules, reach out through the channel you normally use to share this project.
+    information or money. If you'd like to report an issue, suggest improvements to the detection
+    rules, or just want to say hello, email me at
+    <a href="mailto:syedanishath2306@gmail.com" style="color:var(--blue2); font-weight:600;">syedanishath2306@gmail.com</a>.
   </p>
 </div>
 {% endblock %}

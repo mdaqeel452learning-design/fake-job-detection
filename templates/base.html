@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}Fake Job Detection System{% endblock %}</title>
+<title>{% block title %}JobShield AI — Fake Job Detector{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 {% block head %}{% endblock %}
 </head>
@@ -12,16 +15,16 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-icon">🛡️</div>
-      <h1>Fake Job</h1>
-      <p>Detection System</p>
+      <h1>JobShield <span>AI</span></h1>
+      <p>Fake Job Detector</p>
     </div>
     <nav class="nav">
-      <a href="{{ url_for('index') }}" class="nav-link {{ 'active' if request.endpoint == 'index' }}">🏠 Home</a>
-      <a href="{{ url_for('history_page') }}" class="nav-link {{ 'active' if request.endpoint == 'history_page' }}">🕘 History</a>
-      <a href="{{ url_for('statistics_page') }}" class="nav-link {{ 'active' if request.endpoint == 'statistics_page' }}">📊 Statistics</a>
-      <a href="{{ url_for('about_page') }}" class="nav-link {{ 'active' if request.endpoint == 'about_page' }}">ℹ️ About</a>
-      <a href="{{ url_for('how_it_works_page') }}" class="nav-link {{ 'active' if request.endpoint == 'how_it_works_page' }}">⚙️ How It Works</a>
-      <a href="{{ url_for('contact_page') }}" class="nav-link {{ 'active' if request.endpoint == 'contact_page' }}">✉️ Contact</a>
+      <a href="{{ url_for('index') }}" class="nav-link {{ 'active' if request.endpoint == 'index' }}"><span class="nav-icon">🏠</span> Home</a>
+      <a href="{{ url_for('history_page') }}" class="nav-link {{ 'active' if request.endpoint == 'history_page' }}"><span class="nav-icon">🕘</span> History</a>
+      <a href="{{ url_for('statistics_page') }}" class="nav-link {{ 'active' if request.endpoint == 'statistics_page' }}"><span class="nav-icon">📊</span> Statistics</a>
+      <a href="{{ url_for('about_page') }}" class="nav-link {{ 'active' if request.endpoint == 'about_page' }}"><span class="nav-icon">ℹ️</span> About</a>
+      <a href="{{ url_for('how_it_works_page') }}" class="nav-link {{ 'active' if request.endpoint == 'how_it_works_page' }}"><span class="nav-icon">⚙️</span> How It Works</a>
+      <a href="{{ url_for('contact_page') }}" class="nav-link {{ 'active' if request.endpoint == 'contact_page' }}"><span class="nav-icon">✉️</span> Contact</a>
     </nav>
     <div class="sidebar-note">
       <h3>About Project</h3>
@@ -32,8 +35,8 @@
   <main class="content">
     {% block content %}{% endblock %}
     <footer class="footer">
-      <span>© 2026 Fake Job Detection System</span>
-      <span class="text-blue">Developed using Python, Flask, NLP &amp; Machine Learning</span>
+      <span>© 2026 JobShield AI</span>
+      <span class="text-blue">Built by Syed Nishath</span>
     </footer>
   </main>
 </div>
