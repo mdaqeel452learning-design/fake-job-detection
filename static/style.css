@@ -127,6 +127,32 @@ textarea.job-input {
 
 .button-row { display: flex; justify-content: space-between; margin-top: 14px; }
 
+.struct-questions {
+  margin-top: 14px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.struct-hint { font-size: 11px; color: var(--muted); margin: 0 0 10px; line-height: 1.5; }
+.struct-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+.struct-row label { font-size: 13px; }
+.tri-select {
+  background: #1f2937;
+  color: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  min-width: 110px;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

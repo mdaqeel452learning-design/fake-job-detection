@@ -8,10 +8,28 @@ import os
 import re
 import pickle
 
+from scipy.sparse import hstack, csr_matrix
+
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(_BASE_DIR, "model.pkl")
 VECTORIZER_PATH = os.path.join(_BASE_DIR, "vectorizer.pkl")
 METRICS_PATH = os.path.join(_BASE_DIR, "metrics.json")
+
+# Structural fields, in the fixed order they're appended to the TF-IDF
+# vector. These were picked because they're by far the strongest fraud
+# predictors in the training data (e.g. 82% of real postings have a company
+# logo vs. 33% of fake ones) yet are invisible to a text-only model.
+STRUCT_FIELDS = ("has_company_logo", "has_company_profile", "has_salary_range")
+UNKNOWN = 0.5  # used when the user hasn't answered / dataset value is missing
+
+
+def struct_feature_vector(has_logo=None, has_profile=None, has_salary=None) -> list:
+    def enc(v):
+        if v is None:
+            return UNKNOWN
+        return 1.0 if v else 0.0
+
+    return [enc(has_logo), enc(has_profile), enc(has_salary)]
 
 try:
     from nltk.corpus import stopwords
@@ -154,9 +172,12 @@ class Detector:
         self.model = _load_pickle(model_path)
         self.vectorizer = _load_pickle(vectorizer_path)
 
-    def predict(self, text: str) -> dict:
+    def predict(self, text: str, has_logo=None, has_profile=None, has_salary=None) -> dict:
         cleaned = preprocess_text(text)
-        vector = self.vectorizer.transform([cleaned])
+        text_vector = self.vectorizer.transform([cleaned])
+        struct_vector = csr_matrix([struct_feature_vector(has_logo, has_profile, has_salary)])
+        vector = hstack([text_vector, struct_vector]).tocsr()
+
         proba = self.model.predict_proba(vector)[0]
         ml_prob_fake = float(proba[1]) if len(proba) > 1 else float(proba[0])
 
@@ -173,4 +194,14 @@ class Detector:
             "ml_probability": round(ml_prob_fake * 100, 2),
             "rule_score": raw_rule_score,
             "matched_patterns": matched,
+            "struct_flags": _struct_concerns(has_logo, has_profile, has_salary),
         }
+
+
+def _struct_concerns(has_logo, has_profile, has_salary) -> list:
+    concerns = []
+    if has_logo is False:
+        concerns.append("No company logo on the posting")
+    if has_profile is False:
+        concerns.append("No company profile/description given")
+    return concerns

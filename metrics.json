@@ -1,8 +1,8 @@
 {
   "accuracy": 97.79,
-  "precision": 77.98,
-  "recall": 75.72,
-  "f1_score": 76.83,
+  "precision": 79.75,
+  "recall": 72.83,
+  "f1_score": 76.13,
   "confusion_matrix": {
     "labels": [
       "Real",
@@ -10,16 +10,17 @@
     ],
     "matrix": [
       [
-        3366,
-        37
+        3371,
+        32
       ],
       [
-        42,
-        131
+        47,
+        126
       ]
     ]
   },
   "test_size": 3576,
   "train_size": 27222,
-  "trained_at": "2026-08-01T09:29:43.221913+00:00"
+  "features": "TF-IDF(title+description) + has_company_logo + has_company_profile + has_salary_range",
+  "trained_at": "2026-08-01T10:15:20.969613+00:00"
 }

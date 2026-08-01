@@ -25,7 +25,11 @@
   <p style="font-size:13px; color:var(--muted); line-height:1.6;">A separate check scans for known scam phrasing, split into high-severity signals (e.g. "registration fee", "wire transfer", "whatsapp only") and lower-severity signals that are common in legitimate postings too (e.g. "work from home", "urgent hiring"). Each is weighted accordingly instead of being treated as an all-or-nothing override.</p>
 </div>
 <div class="card">
-  <h3>5. Final Decision</h3>
-  <p style="font-size:13px; color:var(--muted); line-height:1.6;">The final score blends the ML probability (65% weight) with the normalized rule-based score (35% weight). A posting is only flagged Fake if the blended score crosses 50% &mdash; so one generic phrase alone can no longer flip a legitimate posting to Fake.</p>
+  <h3>5. Structural Signals</h3>
+  <p style="font-size:13px; color:var(--muted); line-height:1.6;">Wording alone misses a lot: many scam postings read perfectly cleanly. In the training data, whether a posting has a company logo or a company profile is a far stronger fraud signal than any phrase &mdash; 82% of real postings have a logo vs. only 33% of fake ones, and 84% vs. 32% for a company profile. The form lets you optionally answer these (and whether a salary range is listed) from the actual posting, and they're fed into the model as extra features alongside the text.</p>
+</div>
+<div class="card">
+  <h3>6. Final Decision</h3>
+  <p style="font-size:13px; color:var(--muted); line-height:1.6;">The final score blends the ML probability (which already includes the structural signals, when provided) with the normalized rule-based score (65%/35% weighting). A posting is only flagged Fake if the blended score crosses 50% &mdash; so one generic phrase, or one missing signal, can no longer flip a legitimate posting to Fake on its own.</p>
 </div>
 {% endblock %}

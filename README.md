@@ -79,3 +79,13 @@ not a bug. For persistent history, swap the JSON file for a hosted database
 - **Class imbalance handling**: the training set (only) is balanced via
   oversampling of the minority (fraudulent) class; the test set stays at the
   real ~5% fraud rate for a trustworthy accuracy number.
+- **Structural signals**: text alone misses a lot of fraud — many scam
+  postings read perfectly cleanly. In the training data, `has_company_logo`
+  and `has_company_profile` are far stronger fraud predictors than any
+  wording pattern (82%/84% present in real postings vs. 33%/32% in fake
+  ones). The web form now optionally asks the user these two questions plus
+  salary-range presence, and `train_model.py`/`detection.py` feed them into
+  the model as extra features alongside the TF-IDF text. Tested in
+  isolation, these three fields alone only reach 16% precision (too noisy
+  to use as a hard rule) — which is why they're blended into the model
+  rather than used as an override, same principle as the rule-based check.
